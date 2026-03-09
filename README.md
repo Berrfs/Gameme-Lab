@@ -8,11 +8,11 @@ Welcome to the **Gameme-Lab** documentation hub! Here are the essential links re
 
 ### 📝 Planning Documents
 * [**Rough Plan**](https://www.kdocs.cn/l/cdzxmcNtNxf6?from=docs)
+* [**Project Plan**](https://www.kdocs.cn/l/ckIK2QcgHzsv)
 
 ### 📅 Activity Logs
 * [**Project Log & Meeting Summaries**](https://www.kdocs.cn/l/cfQhVSEEViyf?from=docs) 
 * [**Personal Log**](https://www.kdocs.cn/l/cfTSfjVqr7rd)
-* [**Project Plan**](https://www.kdocs.cn/l/ckIK2QcgHzsv)
 
 ---
 *Created for Gameme-Lab internal team use.*
