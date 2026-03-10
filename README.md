@@ -1,8 +1,5 @@
 # 🎮 Gameme-Lab | Developer Hub
 
-> **Project Mission:** Streamlining gaming meme innovation through structured collaboration.
-> *Internal documentation for Gameme-Lab team members.*
-
 ---
 
 ## 🚀 Stage 1: Conceptualization & Strategy
@@ -21,7 +18,6 @@
 
 ## 📢 Presentations
 * **[🎥 Rough Plan Presentation](https://www.canva.cn/design/DAHDiDCoSmg/j36IBqvwtroE1759VAGbew/edit?utm_content=DAHDiDCoSmg&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)**
-* 
 ---
 
 <p align="center">
