@@ -1,21 +1,30 @@
-# 🎮 Gameme-Lab
+# 🎮 Gameme-Lab | Developer Hub
 
-Welcome to the **Gameme-Lab** documentation hub! Here are the essential links related to our project development:
+> **Project Mission:** Streamlining gaming meme innovation through structured collaboration.
+> *Internal documentation for Gameme-Lab team members.*
 
 ---
 
-## 🚀 Stage 1
+## 🚀 Stage 1: Conceptualization & Strategy
 
-### 📝 Planning Documents
-* [**Rough Plan**](https://www.kdocs.cn/l/cdzxmcNtNxf6?from=docs)
-* [**Project Plan**](https://www.kdocs.cn/l/ckIK2QcgHzsv)
+### 📝 Strategic Documentation
+| Document | Purpose | Resource Link |
+| :--- | :--- | :--- |
+| **Rough Plan** | Initial ideation and raw concepts. | [Access Document 🔗](https://www.kdocs.cn/l/cdzxmcNtNxf6?from=docs) |
+| **Project Plan** | Detailed roadmap and deliverables. | [Access Document 🔗](https://www.kdocs.cn/l/ckIK2QcgHzsv) |
 
-### 📅 Activity Logs
-* [**Project Log & Meeting Summaries**](https://www.kdocs.cn/l/cfQhVSEEViyf?from=docs) 
+### 📅 Execution & Activity Tracking
+* [**Project Log & Meeting Summaries**](https://www.kdocs.cn/l/cfQhVSEEViyf?from=docs)
 * [**Personal Log**](https://www.kdocs.cn/l/cfTSfjVqr7rd)
 
-### 📅 Presentation
-* [**Personal Log**](https://www.canva.cn/design/DAHDiDCoSmg/j36IBqvwtroE1759VAGbew/edit?utm_content=DAHDiDCoSmg&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
-
 ---
-*Created for Gameme-Lab internal team use.*
+
+## 📢 Presentations
+* **[🎥 Rough Plan Presentation](https://www.canva.cn/design/DAHDiDCoSmg/j36IBqvwtroE1759VAGbew/edit?utm_content=DAHDiDCoSmg&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)**
+* 
+---
+
+<p align="center">
+  <b>Gameme-Lab © 2026</b><br>
+  <i>"Leveling up the meme economy."</i>
+</p>
