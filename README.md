@@ -20,5 +20,4 @@
 
 <p align="center">
   <b>Gameme-Lab © 2026</b><br>
-  <i>"Leveling up the meme economy."</i>
 </p>
