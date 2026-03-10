@@ -1,0 +1,14 @@
+{
+    "scenes": [
+        {
+            "id": "scene1",
+            "background": "bg_classroom.png",
+            "dialogues": [
+                {"speaker": "???", "text": "You shouldn't be playing this, this is not a game."},
+                {"speaker": "Player", "text": "Who's that?"},
+                {"speaker": "???", "text": "I'm Game, the game you're playing right now."},
+                {"speaker": "Player", "text": "You said that you're a game yourself, so why can't I play you?"}
+            ]
+        }
+    ]
+}
