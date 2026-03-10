@@ -27,9 +27,7 @@
 <br>
 
 ### 📢 Presentations
-> [!TIP]
-> **Check out our latest vision:**
-> [🎥 View Rough Plan Presentation (Canva)](https://www.canva.cn/design/DAHDiDCoSmg/j36IBqvwtroE1759VAGbew/edit?utm_content=DAHDiDCoSmg&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
+* 🎥 [**Rough Plan Presentation**](https://www.canva.cn/design/DAHDiDCoSmg/j36IBqvwtroE1759VAGbew/edit?utm_content=DAHDiDCoSmg&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 ---
 
