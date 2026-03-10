@@ -2,7 +2,7 @@
 
 ---
 
-### 🚀 Stage 1: Conceptualization & Strategy
+## 🚀 Stage 1: Conceptualization & Strategy
 
 ### 📝 Strategic Documentation
 | Document | Purpose | Resource Link |
