@@ -2,12 +2,16 @@
 #define GAME_H
 
 #include "scene.h"
+#include "raylib.h"
+#include <string.h>  // 新增：用于字符串操作
 
 // 游戏状态枚举
 typedef enum GameState {
-    STATE_TITLE,        // 标题画面
-    STATE_PLAYING,      // 剧情进行中
-    STATE_SETTINGS      // 设置界面
+    STATE_TITLE,
+    STATE_NAME_INPUT,   // 新增：输入名字
+    STATE_PLAYING,
+    STATE_CHOICE,
+    STATE_SETTINGS
 } GameState;
 
 // 游戏上下文
@@ -15,16 +19,23 @@ typedef struct GameContext {
     GameState state;
     Scene *current_scene;   // 当前场景
     int dialogue_index;     // 当前显示的对话索引
+
+    // 玩家名字（最多20字符 + 结尾'\0'）
+    char player_name[21];
+
     // 设置项
     float master_volume;    // 主音量 (0.0 ~ 1.0)
-    int text_speed;         // 文字速度（字符/秒，简单起见我们用延迟帧数表示）
-    // Texture UI untuk title screen
-    Texture2D titleBackground;  // Background merah
-    Texture2D titleLogo;        // Papan kayu "NO WAY!"
-    Texture2D gamemeLabLogo;    // Logo "GamemeLab"
-    Texture2D btnStart;         // Tombol "Touch to start"
-    Texture2D btnMenu;          // Tombol "Menu"
-    Texture2D btnExit;          // Tombol "Exit"
+    bool auto_mode;         // true = 自动翻页, false = 手动点击
+    float auto_interval;    // 自动翻页间隔（秒）
+    float auto_timer;       // 自动翻页计时器
+
+    // Texture UI 用于标题画面
+    Texture2D titleBackground;
+    Texture2D titleLogo;
+    Texture2D gamemeLabLogo;
+    Texture2D btnStart;
+    Texture2D btnMenu;
+    Texture2D btnExit;
 } GameContext;
 
 // 全局游戏上下文
