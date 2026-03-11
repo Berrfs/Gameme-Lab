@@ -8,7 +8,20 @@
                 {"speaker": "Player", "text": "Who's that?"},
                 {"speaker": "???", "text": "I'm Game, the game you're playing right now."},
                 {"speaker": "Player", "text": "You said that you're a game yourself, so why can't I play you?"}
+            ],
+            "choices": [
+                {"text": "Continue to assk", "next_scene": "scene2"},
+                {"text": "Quit a game", "next_scene": "title"}
             ]
+        },
+        {
+            "id": "scene2",
+            "background": "bg_corridor.png",
+            "dialogues": [
+                {"speaker": "Game", "text": "In short,you can't play."},
+                {"speaker": "Player", "text": "I don't believe it."}
+            ],
+            "choices": []
         }
     ]
 }

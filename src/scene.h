@@ -6,16 +6,24 @@
 
 // 对话结构
 typedef struct Dialogue {
-    char *speaker;   // 说话者
-    char *text;      // 对话内容
+    char *speaker;
+    char *text;
 } Dialogue;
 
-// 场景结构（简化版：暂时只有背景和对话，无角色和选项）
+// 选项结构
+typedef struct Choice {
+    char *text;            // 选项文本
+    char *next_scene_id;   // 跳转的场景ID
+} Choice;
+
+// 场景结构
 typedef struct Scene {
-    char *id;               // 场景唯一ID
-    char *background;       // 背景图片文件名
-    Dialogue *dialogues;    // 对话数组
-    int dialogue_count;     // 对话数量
+    char *id;
+    char *background;
+    Dialogue *dialogues;
+    int dialogue_count;
+    Choice *choices;        // 选项数组
+    int choice_count;       // 选项数量
 } Scene;
 
 // 全局场景列表

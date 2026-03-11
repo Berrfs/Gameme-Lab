@@ -8,14 +8,12 @@ Scene *g_scenes = NULL;
 int g_scene_count = 0;
 
 void LoadScenesFromJSON(const char *filename) {
-    // 1. 读取文件
     char *json_str = LoadFileText(filename);
     if (!json_str) {
         TraceLog(LOG_ERROR, "Failed to load scenes file: %s", filename);
         return;
     }
 
-    // 2. 解析 JSON
     cJSON *root = cJSON_Parse(json_str);
     if (!root) {
         TraceLog(LOG_ERROR, "JSON parse error in %s", filename);
@@ -23,7 +21,6 @@ void LoadScenesFromJSON(const char *filename) {
         return;
     }
 
-    // 3. 获取 scenes 数组
     cJSON *scenes_array = cJSON_GetObjectItem(root, "scenes");
     if (!cJSON_IsArray(scenes_array)) {
         TraceLog(LOG_ERROR, "No scenes array found");
@@ -32,20 +29,18 @@ void LoadScenesFromJSON(const char *filename) {
         return;
     }
 
-    // 4. 统计场景数量
     g_scene_count = cJSON_GetArraySize(scenes_array);
     g_scenes = (Scene*)malloc(sizeof(Scene) * g_scene_count);
 
-    // 5. 遍历每个场景
     for (int i = 0; i < g_scene_count; i++) {
         cJSON *scene_item = cJSON_GetArrayItem(scenes_array, i);
         Scene *sc = &g_scenes[i];
 
-        // 获取 id
+        // 解析 id
         cJSON *id_json = cJSON_GetObjectItem(scene_item, "id");
         sc->id = id_json ? strdup(id_json->valuestring) : NULL;
 
-        // 获取 background
+        // 解析 background
         cJSON *bg_json = cJSON_GetObjectItem(scene_item, "background");
         sc->background = bg_json ? strdup(bg_json->valuestring) : NULL;
 
@@ -53,23 +48,31 @@ void LoadScenesFromJSON(const char *filename) {
         cJSON *dialogs_array = cJSON_GetObjectItem(scene_item, "dialogues");
         sc->dialogue_count = cJSON_GetArraySize(dialogs_array);
         sc->dialogues = (Dialogue*)malloc(sizeof(Dialogue) * sc->dialogue_count);
-
         for (int j = 0; j < sc->dialogue_count; j++) {
             cJSON *dial_item = cJSON_GetArrayItem(dialogs_array, j);
             Dialogue *dl = &sc->dialogues[j];
-
             cJSON *speaker = cJSON_GetObjectItem(dial_item, "speaker");
             dl->speaker = speaker ? strdup(speaker->valuestring) : NULL;
-
             cJSON *text = cJSON_GetObjectItem(dial_item, "text");
             dl->text = text ? strdup(text->valuestring) : NULL;
         }
+
+        // 解析 choices 数组
+        cJSON *choices_array = cJSON_GetObjectItem(scene_item, "choices");
+        sc->choice_count = cJSON_GetArraySize(choices_array);
+        sc->choices = (Choice*)malloc(sizeof(Choice) * sc->choice_count);
+        for (int j = 0; j < sc->choice_count; j++) {
+            cJSON *choice_item = cJSON_GetArrayItem(choices_array, j);
+            Choice *ch = &sc->choices[j];
+            cJSON *text = cJSON_GetObjectItem(choice_item, "text");
+            ch->text = text ? strdup(text->valuestring) : NULL;
+            cJSON *next = cJSON_GetObjectItem(choice_item, "next_scene");
+            ch->next_scene_id = next ? strdup(next->valuestring) : NULL;
+        }
     }
 
-    // 6. 清理
     cJSON_Delete(root);
     UnloadFileText(json_str);
-
     TraceLog(LOG_INFO, "Loaded %d scenes from %s", g_scene_count, filename);
 }
 
@@ -78,11 +81,18 @@ void UnloadScenes(void) {
         Scene *sc = &g_scenes[i];
         free(sc->id);
         free(sc->background);
+
         for (int j = 0; j < sc->dialogue_count; j++) {
             free(sc->dialogues[j].speaker);
             free(sc->dialogues[j].text);
         }
         free(sc->dialogues);
+
+        for (int j = 0; j < sc->choice_count; j++) {
+            free(sc->choices[j].text);
+            free(sc->choices[j].next_scene_id);
+        }
+        free(sc->choices);
     }
     free(g_scenes);
     g_scenes = NULL;
