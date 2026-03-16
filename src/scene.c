@@ -1,19 +1,27 @@
+/* scene.c — Scene loading, cleanup, and lookup implementation.
+   Parses scene data (dialogues + choices) from a JSON file using cJSON.
+   Code updated by 周沐格, at 08:21PM 2026/03/15 */
+
 #include "scene.h"
 #include "cJSON/cJSON.h"
 #include "raylib.h"
 #include <stdio.h>
 #include <string.h>
 
+/* Global scene storage */
 Scene *g_scenes = NULL;
 int g_scene_count = 0;
 
+/* Load every scene from a JSON file into the global g_scenes array */
 void LoadScenesFromJSON(const char *filename) {
+    /* Read the entire file into a string using raylib's helper */
     char *json_str = LoadFileText(filename);
     if (!json_str) {
         TraceLog(LOG_ERROR, "Failed to load scenes file: %s", filename);
         return;
     }
 
+    /* Parse the JSON string into a cJSON tree */
     cJSON *root = cJSON_Parse(json_str);
     if (!root) {
         TraceLog(LOG_ERROR, "JSON parse error in %s", filename);
@@ -21,6 +29,7 @@ void LoadScenesFromJSON(const char *filename) {
         return;
     }
 
+    /* Retrieve the top-level "scenes" array */
     cJSON *scenes_array = cJSON_GetObjectItem(root, "scenes");
     if (!cJSON_IsArray(scenes_array)) {
         TraceLog(LOG_ERROR, "No scenes array found");
@@ -29,6 +38,7 @@ void LoadScenesFromJSON(const char *filename) {
         return;
     }
 
+    /* Allocate memory for all scenes at once */
     g_scene_count = cJSON_GetArraySize(scenes_array);
     g_scenes = (Scene*)malloc(sizeof(Scene) * g_scene_count);
 
@@ -36,15 +46,15 @@ void LoadScenesFromJSON(const char *filename) {
         cJSON *scene_item = cJSON_GetArrayItem(scenes_array, i);
         Scene *sc = &g_scenes[i];
 
-        // 解析 id
+        /* Parse scene id */
         cJSON *id_json = cJSON_GetObjectItem(scene_item, "id");
         sc->id = id_json ? strdup(id_json->valuestring) : NULL;
 
-        // 解析 background
+        /* Parse background image filename */
         cJSON *bg_json = cJSON_GetObjectItem(scene_item, "background");
         sc->background = bg_json ? strdup(bg_json->valuestring) : NULL;
 
-        // 解析 dialogues 数组
+        /* Parse the dialogues array for this scene */
         cJSON *dialogs_array = cJSON_GetObjectItem(scene_item, "dialogues");
         sc->dialogue_count = cJSON_GetArraySize(dialogs_array);
         sc->dialogues = (Dialogue*)malloc(sizeof(Dialogue) * sc->dialogue_count);
@@ -57,7 +67,7 @@ void LoadScenesFromJSON(const char *filename) {
             dl->text = text ? strdup(text->valuestring) : NULL;
         }
 
-        // 解析 choices 数组
+        /* Parse the choices array for this scene */
         cJSON *choices_array = cJSON_GetObjectItem(scene_item, "choices");
         sc->choice_count = cJSON_GetArraySize(choices_array);
         sc->choices = (Choice*)malloc(sizeof(Choice) * sc->choice_count);
@@ -71,23 +81,27 @@ void LoadScenesFromJSON(const char *filename) {
         }
     }
 
+    /* Clean up the cJSON tree and the raw file text */
     cJSON_Delete(root);
     UnloadFileText(json_str);
     TraceLog(LOG_INFO, "Loaded %d scenes from %s", g_scene_count, filename);
 }
 
+/* Free all heap-allocated scene data */
 void UnloadScenes(void) {
     for (int i = 0; i < g_scene_count; i++) {
         Scene *sc = &g_scenes[i];
         free(sc->id);
         free(sc->background);
 
+        /* Free every dialogue's strings, then the dialogues array itself */
         for (int j = 0; j < sc->dialogue_count; j++) {
             free(sc->dialogues[j].speaker);
             free(sc->dialogues[j].text);
         }
         free(sc->dialogues);
 
+        /* Free every choice's strings, then the choices array itself */
         for (int j = 0; j < sc->choice_count; j++) {
             free(sc->choices[j].text);
             free(sc->choices[j].next_scene_id);
@@ -99,6 +113,7 @@ void UnloadScenes(void) {
     g_scene_count = 0;
 }
 
+/* Linear search for a scene by its string ID. Returns NULL if not found */
 Scene* GetSceneByID(const char *id) {
     for (int i = 0; i < g_scene_count; i++) {
         if (strcmp(g_scenes[i].id, id) == 0)

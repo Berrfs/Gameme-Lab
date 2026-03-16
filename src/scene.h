@@ -1,38 +1,42 @@
+/* scene.h — Data structures and API for the scene / dialogue system.
+   Scenes, dialogues, and branching choices are loaded from JSON at runtime.
+   Code updated by Louis, at 05:48PM 2026/03/13 */
+
 #ifndef SCENE_H
 #define SCENE_H
 
 #include "raylib.h"
 #include <stdlib.h>
 
-// 对话结构
+/* A single line of dialogue spoken by one character */
 typedef struct Dialogue {
-    char *speaker;
-    char *text;
+    char *speaker;  /* Name of the speaking character */
+    char *text;     /* The dialogue text content */
 } Dialogue;
 
-// 选项结构
+/* A branching choice the player can select */
 typedef struct Choice {
-    char *text;            // 选项文本
-    char *next_scene_id;   // 跳转的场景ID
+    char *text;            /* Display text for this choice */
+    char *next_scene_id;   /* ID of the scene to jump to */
 } Choice;
 
-// 场景结构
+/* A complete scene containing dialogues and optional choices */
 typedef struct Scene {
-    char *id;
-    char *background;
-    Dialogue *dialogues;
-    int dialogue_count;
-    Choice *choices;        // 选项数组
-    int choice_count;       // 选项数量
+    char *id;               /* Unique scene identifier */
+    char *background;       /* Background image filename */
+    Dialogue *dialogues;    /* Array of dialogue lines */
+    int dialogue_count;     /* Number of dialogue entries */
+    Choice *choices;        /* Array of branching choices */
+    int choice_count;       /* Number of choice entries */
 } Scene;
 
-// 全局场景列表
+/* Global scene list — populated by LoadScenesFromJSON() */
 extern Scene *g_scenes;
 extern int g_scene_count;
 
-// 函数声明
-void LoadScenesFromJSON(const char *filename);
-void UnloadScenes(void);
-Scene* GetSceneByID(const char *id);
+/* Scene system functions */
+void LoadScenesFromJSON(const char *filename);  /* Parse scenes from a JSON file */
+void UnloadScenes(void);                        /* Free all scene memory */
+Scene* GetSceneByID(const char *id);            /* Look up a scene by its string ID */
 
 #endif

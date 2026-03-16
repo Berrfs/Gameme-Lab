@@ -1,26 +1,30 @@
+/* game.c — Core game logic: state machine, rendering, and input handling.
+   Manages title screen, name input, story playback, choices, and settings.
+   Code updated by 周沐格, at 05:12PM 2026/03/14 */
+
 #include "game.h"
 #include "raylib.h"
 #include <stdio.h>
-#include <string.h>   // 新增：用于字符串操作
+#include <string.h>   /* For strcpy, strcmp, strlen */
 
 GameContext game;
 
-// 静态函数声明
+/* --- Forward declarations for private (static) functions --- */
 static void DrawTitle(void);
 static void DrawPlaying(void);
 static void DrawChoice(void);
 static void DrawSettings(void);
-static void DrawNameInput(void);        // 新增
+static void DrawNameInput(void);
 static void HandleTitleInput(void);
 static void UpdatePlaying(void);
 static void HandleChoiceInput(void);
 static void HandleSettingsInput(void);
-static void HandleNameInput(void);       // 新增
+static void HandleNameInput(void);
 static void SelectChoice(int index);
 static bool IsButtonClicked(Texture2D tex, int posX, int posY, float scale);
 static bool IsButtonHovered(Texture2D tex, int posX, int posY, float scale);
 
-// --- 辅助函数：按钮点击检测 ---
+/* --- Utility: check if a texture-based button was clicked this frame --- */
 static bool IsButtonClicked(Texture2D tex, int posX, int posY, float scale) {
     int btnWidth = (int)(tex.width * scale);
     int btnHeight = (int)(tex.height * scale);
@@ -28,6 +32,7 @@ static bool IsButtonClicked(Texture2D tex, int posX, int posY, float scale) {
     return (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(GetMousePosition(), btnRect));
 }
 
+/* --- Utility: check if the mouse is hovering over a texture-based button --- */
 static bool IsButtonHovered(Texture2D tex, int posX, int posY, float scale) {
     int btnWidth = (int)(tex.width * scale);
     int btnHeight = (int)(tex.height * scale);
@@ -35,26 +40,26 @@ static bool IsButtonHovered(Texture2D tex, int posX, int posY, float scale) {
     return CheckCollisionPointRec(GetMousePosition(), btnRect);
 }
 
-// --- 初始化 ---
+/* ========== Initialization ========== */
 void InitGame(void) {
-    // 加载场景数据
+    /* Load scene data from the JSON script file */
     LoadScenesFromJSON("data/scenes.json");
 
-    // 初始化状态
+    /* Set the starting game state */
     game.state = STATE_TITLE;
     game.current_scene = GetSceneByID("scene1");
     game.dialogue_index = 0;
 
-    // 默认设置
+    /* Default settings */
     game.master_volume = 0.8f;
     game.auto_mode = false;
     game.auto_interval = 2.0f;
     game.auto_timer = 0.0f;
 
-    // 设置默认玩家名字
+    /* Set a default player name */
     strcpy(game.player_name, "Player");
 
-    // 加载标题画面纹理
+    /* Load title screen textures */
     game.titleBackground = LoadTexture("UI/red curtain.jpg");
     game.titleLogo = LoadTexture("UI/no way.png");
     game.gamemeLabLogo = LoadTexture("UI/Gameme Lab.png");
@@ -63,25 +68,25 @@ void InitGame(void) {
     game.btnExit = LoadTexture("UI/exit.png");
 }
 
-// --- 主更新循环 ---
+/* ========== Per-Frame Update Dispatch ========== */
 void UpdateGame(void) {
     switch (game.state) {
         case STATE_TITLE:       HandleTitleInput(); break;
-        case STATE_NAME_INPUT:  HandleNameInput(); break;   // 新增
+        case STATE_NAME_INPUT:  HandleNameInput(); break;
         case STATE_PLAYING:     UpdatePlaying(); break;
         case STATE_CHOICE:      HandleChoiceInput(); break;
         case STATE_SETTINGS:    HandleSettingsInput(); break;
     }
 }
 
-// --- 主绘制循环 ---
+/* ========== Per-Frame Render Dispatch ========== */
 void DrawGame(void) {
     BeginDrawing();
     ClearBackground(RAYWHITE);
 
     switch (game.state) {
         case STATE_TITLE:       DrawTitle(); break;
-        case STATE_NAME_INPUT:  DrawNameInput(); break;    // 新增
+        case STATE_NAME_INPUT:  DrawNameInput(); break;
         case STATE_PLAYING:     DrawPlaying(); break;
         case STATE_CHOICE:      DrawChoice(); break;
         case STATE_SETTINGS:    DrawSettings(); break;
@@ -90,7 +95,7 @@ void DrawGame(void) {
     EndDrawing();
 }
 
-// --- 资源释放 ---
+/* ========== Resource Cleanup ========== */
 void UnloadGame(void) {
     UnloadScenes();
     UnloadTexture(game.titleBackground);
@@ -101,18 +106,18 @@ void UnloadGame(void) {
     UnloadTexture(game.btnExit);
 }
 
-// ==================== 标题画面 ====================
+/* ==================== Title Screen Drawing ==================== */
 static void DrawTitle(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
 
-    // 背景
+    /* Draw the full-screen background image */
     DrawTexturePro(game.titleBackground,
         (Rectangle){0, 0, (float)game.titleBackground.width, (float)game.titleBackground.height},
         (Rectangle){0, 0, (float)screenWidth, (float)screenHeight},
         (Vector2){0, 0}, 0.0f, WHITE);
 
-    // 1. 左侧大标牌 "NO WAY!"
+    /* 1) Left side — large "NO WAY!" logo */
     float logoScale = 0.40f;
     int logoW = (int)(game.titleLogo.width * logoScale);
     int logoH = (int)(game.titleLogo.height * logoScale);
@@ -120,7 +125,7 @@ static void DrawTitle(void) {
     int logoY = (screenHeight - logoH) / 2;
     DrawTextureEx(game.titleLogo, (Vector2){ (float)logoX, (float)logoY }, 0.0f, logoScale, WHITE);
 
-    // 2. 右上角 "Gameme Lab" 图标
+    /* 2) Top-right — "Gameme Lab" icon */
     float glScale = 0.80f;
     int glW = (int)(game.gamemeLabLogo.width * glScale);
     int glX = screenWidth - glW - 60;
@@ -129,7 +134,7 @@ static void DrawTitle(void) {
 
     int rightAreaCenterX = screenWidth * 3 / 4;
 
-    // 3. 按钮 "Touch to start"
+    /* 3) "Touch to start" button — scales up slightly on hover */
     float startScale = 0.39f;
     int startW = (int)(game.btnStart.width * startScale);
     int startH = (int)(game.btnStart.height * startScale);
@@ -144,7 +149,7 @@ static void DrawTitle(void) {
         DrawTextureEx(game.btnStart, (Vector2){ (float)startX, (float)startY }, 0.0f, startScale, WHITE);
     }
 
-    // 4. 按钮 "Menu"
+    /* 4) "Menu" button — scales up slightly on hover */
     float menuScale = 0.11f;
     int menuW = (int)(game.btnMenu.width * menuScale);
     int menuH = (int)(game.btnMenu.height * menuScale);
@@ -159,7 +164,7 @@ static void DrawTitle(void) {
         DrawTextureEx(game.btnMenu, (Vector2){ (float)menuX, (float)menuY }, 0.0f, menuScale, WHITE);
     }
 
-    // 5. 按钮 "Exit"
+    /* 5) "Exit" button — scales up slightly on hover */
     float exitScale = 0.11f;
     int exitW = (int)(game.btnExit.width * exitScale);
     int exitH = (int)(game.btnExit.height * exitScale);
@@ -175,11 +180,13 @@ static void DrawTitle(void) {
     }
 }
 
+/* ==================== Title Screen Input ==================== */
 static void HandleTitleInput(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
     int rightAreaCenterX = screenWidth * 3 / 4;
 
+    /* Recalculate button positions (must match DrawTitle) */
     float startScale = 0.39f;
     int startW = (int)(game.btnStart.width * startScale);
     int startH = (int)(game.btnStart.height * startScale);
@@ -198,18 +205,20 @@ static void HandleTitleInput(void) {
     int exitX = rightAreaCenterX - exitW / 2;
     int exitY = menuY + menuH + 40;
 
-    // 点击 "Touch to start" 进入姓名输入界面
+    /* Click "Touch to start" → go to name input screen */
     if (IsButtonClicked(game.btnStart, startX, startY, startScale)) {
         game.state = STATE_NAME_INPUT;
-        strcpy(game.player_name, "");   // 清空，让用户输入
+        strcpy(game.player_name, "");   /* Clear so the user types fresh */
     }
+    /* Click "Menu" → open settings */
     if (IsButtonClicked(game.btnMenu, menuX, menuY, menuScale)) {
         game.state = STATE_SETTINGS;
     }
+    /* Click "Exit" → close the window */
     if (IsButtonClicked(game.btnExit, exitX, exitY, exitScale)) {
         CloseWindow();
     }
-    // 键盘快捷键
+    /* Keyboard shortcuts */
     if (IsKeyPressed(KEY_ENTER)) {
         game.state = STATE_NAME_INPUT;
         strcpy(game.player_name, "");
@@ -217,45 +226,48 @@ static void HandleTitleInput(void) {
     if (IsKeyPressed(KEY_S)) game.state = STATE_SETTINGS;
 }
 
-// ==================== 姓名输入界面 ====================
+/* ==================== Name Input Screen ==================== */
+
+/* Draw the name input UI overlay */
 static void DrawNameInput(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
 
-    // 半透明背景或纯色背景
+    /* Dark background overlay */
     DrawRectangle(0, 0, screenWidth, screenHeight, (Color){ 50, 50, 50, 255 });
 
-    // 提示文字
+    /* Prompt text */
     const char *prompt = "Please enter your name (English only, max 20 chars):";
     DrawText(prompt, screenWidth/2 - MeasureText(prompt, 40)/2, screenHeight/2 - 100, 40, WHITE);
 
-    // 绘制输入框
+    /* Input box */
     int boxWidth = 600;
     int boxHeight = 60;
     int boxX = screenWidth/2 - boxWidth/2;
     int boxY = screenHeight/2 - boxHeight/2;
     DrawRectangle(boxX, boxY, boxWidth, boxHeight, LIGHTGRAY);
 
-    // 绘制当前输入的名字
+    /* Current typed name */
     int fontSize = 40;
     int textWidth = MeasureText(game.player_name, fontSize);
     DrawText(game.player_name, boxX + 10, boxY + 10, fontSize, BLACK);
 
-    // 绘制光标（闪烁效果）
+    /* Blinking cursor (toggles every 0.5 seconds) */
     if (((int)(GetTime() * 2) % 2) == 0) {
         int caretX = boxX + 10 + textWidth;
         DrawRectangle(caretX, boxY + 10, 3, fontSize, BLACK);
     }
 
-    // 提示按回车确认
+    /* Hint text below the box */
     DrawText("Press ENTER to confirm", screenWidth/2 - 150, boxY + 80, 20, GRAY);
 }
 
+/* Handle keyboard input for the name entry screen */
 static void HandleNameInput(void) {
-    // 获取按下的字符
+    /* Read typed characters from the OS input queue */
     int key = GetCharPressed();
     while (key > 0) {
-        // 只允许英文字母（大小写）和空格
+        /* Only allow English letters (A-Z, a-z) and space */
         if ((key >= 'A' && key <= 'Z') || (key >= 'a' && key <= 'z') || key == ' ') {
             int len = strlen(game.player_name);
             if (len < 20) {
@@ -266,7 +278,7 @@ static void HandleNameInput(void) {
         key = GetCharPressed();
     }
 
-    // 处理退格键
+    /* Backspace — delete the last character */
     if (IsKeyPressed(KEY_BACKSPACE)) {
         int len = strlen(game.player_name);
         if (len > 0) {
@@ -274,31 +286,33 @@ static void HandleNameInput(void) {
         }
     }
 
-    // 按下回车确认
+    /* Enter — confirm name and start the game */
     if (IsKeyPressed(KEY_ENTER)) {
-        // 如果名字为空，设为默认 "Player"
+        /* Fall back to "Player" if the field is empty */
         if (strlen(game.player_name) == 0) {
             strcpy(game.player_name, "Player");
         }
-        // 进入游戏
+        /* Transition to the story playback state */
         game.state = STATE_PLAYING;
         game.dialogue_index = 0;
         game.auto_timer = 0.0f;
     }
 }
 
-// ==================== 剧情播放 ====================
+/* ==================== Story Playback ==================== */
+
+/* Draw the current dialogue line (or end-of-scene message) */
 static void DrawPlaying(void) {
     Scene *sc = game.current_scene;
     if (!sc) return;
 
-    // 临时用颜色代替背景
+    /* Temporary placeholder background (solid color) */
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), LIGHTGRAY);
     DrawText(TextFormat("Background: %s", sc->background ? sc->background : "none"), 40, 40, 20, BLACK);
 
     if (game.dialogue_index < sc->dialogue_count) {
         Dialogue *d = &sc->dialogues[game.dialogue_index];
-        // 判断说话者是否为 "Player"，如果是则显示玩家名字
+        /* If the speaker tag is "Player", substitute with the actual player name */
         const char *speaker = d->speaker;
         if (strcmp(speaker, "Player") == 0) {
             speaker = game.player_name;
@@ -309,16 +323,17 @@ static void DrawPlaying(void) {
         DrawText("End of scene. Press ESC to title.", 400, 600, 40, BLACK);
     }
 
-    // 显示当前模式
+    /* Display current advance mode (AUTO / MANUAL) */
     DrawText(TextFormat("Mode: %s", game.auto_mode ? "AUTO" : "MANUAL"), 20, 20, 30, BLACK);
 }
 
+/* Advance dialogue automatically or on click, and handle scene transitions */
 static void UpdatePlaying(void) {
     Scene *sc = game.current_scene;
     if (!sc) return;
 
     if (game.auto_mode) {
-        // 自动翻页
+        /* Auto-advance: accumulate time and advance when interval is reached */
         game.auto_timer += GetFrameTime();
         if (game.auto_timer >= game.auto_interval) {
             game.auto_timer = 0.0f;
@@ -332,7 +347,7 @@ static void UpdatePlaying(void) {
             }
         }
     } else {
-        // 手动点击
+        /* Manual advance: click or press SPACE to go to next line */
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) || IsKeyPressed(KEY_SPACE)) {
             game.dialogue_index++;
             if (game.dialogue_index >= sc->dialogue_count) {
@@ -345,17 +360,19 @@ static void UpdatePlaying(void) {
         }
     }
 
-    // 通用按键
+    /* Global shortcuts available during playback */
     if (IsKeyPressed(KEY_ESCAPE)) game.state = STATE_TITLE;
     if (IsKeyPressed(KEY_S)) game.state = STATE_SETTINGS;
 }
 
-// ==================== 选项界面 ====================
+/* ==================== Choice Overlay ==================== */
+
+/* Draw available branching choices on a dark overlay */
 static void DrawChoice(void) {
     Scene *sc = game.current_scene;
     if (!sc) return;
 
-    // 半透明遮罩
+    /* Semi-transparent dark overlay */
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), (Color){0, 0, 0, 150});
 
     int startY = 600;
@@ -366,11 +383,12 @@ static void DrawChoice(void) {
     DrawText("Press number key to choose", 400, startY + sc->choice_count*80 + 40, 40, GRAY);
 }
 
+/* Handle choice selection via keyboard (1-9) or mouse click */
 static void HandleChoiceInput(void) {
     Scene *sc = game.current_scene;
     if (!sc) return;
 
-    // 键盘选择（数字键1~9）
+    /* Keyboard: press number keys 1–9 to pick a choice */
     for (int i = 0; i < sc->choice_count; i++) {
         if (IsKeyPressed(KEY_ONE + i)) {
             SelectChoice(i);
@@ -378,7 +396,7 @@ static void HandleChoiceInput(void) {
         }
     }
 
-    // 鼠标选择（粗略区域）
+    /* Mouse: click within the rough bounding box of a choice */
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         Vector2 mouse = GetMousePosition();
         int startY = 600;
@@ -392,6 +410,7 @@ static void HandleChoiceInput(void) {
     }
 }
 
+/* Transition to the scene pointed to by the selected choice */
 static void SelectChoice(int index) {
     Scene *sc = game.current_scene;
     if (!sc || index >= sc->choice_count) return;
@@ -402,26 +421,29 @@ static void SelectChoice(int index) {
         game.state = STATE_PLAYING;
         game.auto_timer = 0.0f;
     } else {
+        /* Target scene not found — fall back to title */
         game.state = STATE_TITLE;
     }
 }
 
-// ==================== 设置界面 ====================
+/* ==================== Settings Screen ==================== */
+
+/* Draw the settings UI: volume slider, auto-mode toggle, interval slider */
 static void DrawSettings(void) {
     DrawText("Settings", 700, 200, 60, BLACK);
 
-    // 音量
+    /* Master volume slider */
     DrawText(TextFormat("Master Volume: %.0f%%", game.master_volume * 100), 400, 400, 40, BLACK);
     DrawRectangle(400, 460, 800, 40, LIGHTGRAY);
     DrawRectangle(400, 460, (int)(800 * game.master_volume), 40, BLUE);
 
-    // 自动翻页开关
+    /* Auto-mode on/off indicator */
     DrawText(TextFormat("Auto Mode: %s", game.auto_mode ? "ON" : "OFF"), 400, 560, 40, BLACK);
     DrawRectangle(400, 620, 800, 40, LIGHTGRAY);
     DrawRectangle(400, 620, (int)(800 * (game.auto_mode ? 1 : 0)), 40, PURPLE);
     DrawText("Press M to toggle Auto/Manual", 400, 680, 30, BLACK);
 
-    // 自动间隔
+    /* Auto-advance interval slider */
     DrawText(TextFormat("Auto Interval: %.1f s", game.auto_interval), 400, 740, 40, BLACK);
     DrawRectangle(400, 800, 800, 40, LIGHTGRAY);
     DrawRectangle(400, 800, (int)(800 * (game.auto_interval / 5.0f)), 40, ORANGE);
@@ -430,8 +452,9 @@ static void DrawSettings(void) {
     DrawText("Press B to go back", 600, 1000, 40, DARKGRAY);
 }
 
+/* Handle settings input: volume, auto-mode toggle, interval adjustment */
 static void HandleSettingsInput(void) {
-    // 音量（左右键）
+    /* Volume control (Left / Right arrow keys) */
     if (IsKeyPressed(KEY_RIGHT)) {
         game.master_volume += 0.05f;
         if (game.master_volume > 1.0f) game.master_volume = 1.0f;
@@ -441,12 +464,12 @@ static void HandleSettingsInput(void) {
         if (game.master_volume < 0.0f) game.master_volume = 0.0f;
     }
 
-    // 切换自动模式
+    /* Toggle auto-advance mode */
     if (IsKeyPressed(KEY_M)) {
         game.auto_mode = !game.auto_mode;
     }
 
-    // 调整自动间隔（上下键）
+    /* Auto-advance interval (Up / Down arrow keys, range 0.5–5.0 s) */
     if (IsKeyPressed(KEY_UP)) {
         game.auto_interval += 0.2f;
         if (game.auto_interval > 5.0f) game.auto_interval = 5.0f;
@@ -456,6 +479,6 @@ static void HandleSettingsInput(void) {
         if (game.auto_interval < 0.5f) game.auto_interval = 0.5f;
     }
 
-    // 返回
+    /* Press B to return to the title screen */
     if (IsKeyPressed(KEY_B)) game.state = STATE_TITLE;
 }
