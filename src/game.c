@@ -371,18 +371,19 @@ static void DrawPlaying(void) {
         DrawRectangle(0, 0, screenWidth, screenHeight, LIGHTGRAY);
     }
 
-    /* Draw character portrait, left side, 30% of screen height (绘制角色立绘，左侧，占屏幕高度30%) */
+    /* Draw character portrait, left side, aligned above dialogue box (绘制角色立绘，左侧，对齐对话框上方) */
+    int dialogBoxHeight = 150;
+    int dialogBoxY = screenHeight - dialogBoxHeight - 20;
     if (game.currentPortrait.id != 0) {
-        float portraitHeight = screenHeight * 0.30f;
+        float portraitHeight = screenHeight * 0.35f;
         float scale = portraitHeight / game.currentPortrait.height;
-        float portraitX = 30;
-        float portraitY = screenHeight - portraitHeight - 160;
+        float portraitW = game.currentPortrait.width * scale;
+        float portraitX = screenWidth - portraitW - 20;
+        float portraitY = dialogBoxY - portraitHeight + 10;
         DrawTextureEx(game.currentPortrait, (Vector2){portraitX, portraitY}, 0.0f, scale, WHITE);
     }
 
     /* Draw bottom dialogue box, semi-transparent (绘制底部半透明对话框) */
-    int dialogBoxHeight = 150;
-    int dialogBoxY = screenHeight - dialogBoxHeight - 20;
     DrawRectangle(20, dialogBoxY, screenWidth - 40, dialogBoxHeight, (Color){0, 0, 0, 180});
 
     if (game.dialogue_index < sc->dialogue_count) {
@@ -449,7 +450,7 @@ static void UpdatePlaying(void) {
                 }
                 // Load new portrait, filename based on speaker name (加载新立绘，文件名基于说话者名称)
                 char path[256];
-                snprintf(path, sizeof(path), "UI/%s.jpg", speaker);
+                snprintf(path, sizeof(path), "UI/%s.png", speaker);
                 game.currentPortrait = LoadTexture(path);
                 if (game.currentPortrait.id == 0) {
                     TraceLog(LOG_WARNING, "Failed to load portrait: %s", path);
@@ -543,7 +544,8 @@ static void DrawChoice(void) {
     if (game.currentPortrait.id != 0) {
         float portraitHeight = screenHeight * 0.30f;
         float scale = portraitHeight / game.currentPortrait.height;
-        float portraitX = 30;
+        float portraitW = game.currentPortrait.width * scale;
+        float portraitX = screenWidth - portraitW - 25;
         float portraitY = screenHeight - portraitHeight - 160;
         DrawTextureEx(game.currentPortrait, (Vector2){portraitX, portraitY}, 0.0f, scale, WHITE);
     }
