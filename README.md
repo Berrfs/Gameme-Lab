@@ -31,6 +31,9 @@
 
 ---
 
+## 🚀 Stage 2
+* ✍️ [**Personal Log**](https://www.kdocs.cn/l/cqYyHC00vOlp)
+
 <div align="center">
   <sub><b>Gameme-Lab © 2026</b></sub>
 </div>
