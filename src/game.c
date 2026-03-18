@@ -531,12 +531,41 @@ static void DrawChoice(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
 
+    /* Draw the scene background behind the overlay (在覆盖层后面绘制场景背景) */
+    if (game.currentBackground.id != 0) {
+        DrawTexturePro(game.currentBackground,
+            (Rectangle){0, 0, (float)game.currentBackground.width, (float)game.currentBackground.height},
+            (Rectangle){0, 0, (float)screenWidth, (float)screenHeight},
+            (Vector2){0, 0}, 0.0f, WHITE);
+    }
+
+    /* Draw character portrait if available (如果有立绘则绘制) */
+    if (game.currentPortrait.id != 0) {
+        float portraitHeight = screenHeight * 0.30f;
+        float scale = portraitHeight / game.currentPortrait.height;
+        float portraitX = 30;
+        float portraitY = screenHeight - portraitHeight - 160;
+        DrawTextureEx(game.currentPortrait, (Vector2){portraitX, portraitY}, 0.0f, scale, WHITE);
+    }
+
     /* Semi-transparent dark overlay (半透明暗色覆盖层) */
-    DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 150});
+    DrawRectangle(0, 0, screenWidth, screenHeight, (Color){0, 0, 0, 170});
 
     int startX = screenWidth / 4;
     int startY = (int)(screenHeight * 0.30f);
     int rowGap = 55;
+    int panelPadding = 20;
+    int panelHeight = sc->choice_count * rowGap + 60;
+
+    /* Draw a semi-transparent panel behind choices for readability (在选项后绘制半透明面板以增加可读性) */
+    DrawRectangle(startX - panelPadding, startY - panelPadding,
+                  screenWidth / 2 + panelPadding * 2, panelHeight,
+                  (Color){20, 20, 30, 180});
+    DrawRectangleLinesEx(
+        (Rectangle){(float)(startX - panelPadding), (float)(startY - panelPadding),
+                     (float)(screenWidth / 2 + panelPadding * 2), (float)panelHeight},
+        2, (Color){255, 255, 255, 60});
+
     Vector2 mouse = GetMousePosition();
     bool anyHovered = false;
 
@@ -545,10 +574,15 @@ static void DrawChoice(void) {
         Rectangle choiceRect = { (float)startX, (float)(choiceY - 5), (float)(screenWidth / 2), 40 };
         bool hovered = CheckCollisionPointRec(mouse, choiceRect);
         if (hovered) anyHovered = true;
+
+        /* Highlight bar behind hovered choice (悬停选项的高亮条) */
+        if (hovered) {
+            DrawRectangle(startX - 10, choiceY - 5, screenWidth / 2 + 20, 40, (Color){255, 200, 50, 40});
+        }
         Color color = hovered ? YELLOW : WHITE;
         DrawText(TextFormat("%d. %s", i+1, sc->choices[i].text), startX, choiceY, 32, color);
     }
-    DrawText("Press number key to choose", startX, startY + sc->choice_count * rowGap + 25, 22, GRAY);
+    DrawText("Press number key to choose", startX, startY + sc->choice_count * rowGap + 5, 22, GRAY);
 
     /* Change cursor to hand pointer when hovering a choice (悬停选项时将光标改为手型指针) */
     SetMouseCursor(anyHovered ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
