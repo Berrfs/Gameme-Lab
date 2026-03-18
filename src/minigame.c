@@ -10,6 +10,7 @@
 #include "raylib.h"
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 // 引用主游戏上下文（定义在 game.c 中）
 extern GameContext game;
