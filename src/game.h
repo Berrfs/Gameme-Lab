@@ -1,50 +1,69 @@
+/* game.h — Public interface for the game module.
+   Defines the GameState enum, GameContext struct, and core lifecycle functions.
+   Code updated by 周沐格, at 07:34PM 2026/03/14 */
+
 #ifndef GAME_H
 #define GAME_H
 
 #include "scene.h"
 #include "raylib.h"
-#include <string.h>  // 新增：用于字符串操作
+#include "minigame.h"  
+#include <string.h>  /* For string operations (strcpy, strcmp, strlen) */
 
-// 游戏状态枚举
+/* Enum representing all possible game states */
 typedef enum GameState {
-    STATE_TITLE,
-    STATE_NAME_INPUT,   // 新增：输入名字
-    STATE_PLAYING,
-    STATE_CHOICE,
-    STATE_SETTINGS
+    STATE_TITLE,       /* Title / splash screen */
+    STATE_NAME_INPUT,  /* Player name input screen */
+    STATE_PLAYING,     /* Story dialogue playback */
+    STATE_CHOICE,      /* Branching choice overlay */
+    STATE_SETTINGS,     /* Settings / options menu */
+    STATE_MINIGAME      // 新增
 } GameState;
 
-// 游戏上下文
+/* Master struct that holds the entire runtime state of the game */
 typedef struct GameContext {
     GameState state;
-    Scene *current_scene;   // 当前场景
-    int dialogue_index;     // 当前显示的对话索引
+    Scene *current_scene;   /* Pointer to the currently active scene */
+    int dialogue_index;     /* Index of the dialogue line being displayed */
 
-    // 玩家名字（最多20字符 + 结尾'\0'）
+    /* Player name — max 20 characters + null terminator */
     char player_name[21];
 
-    // 设置项
-    float master_volume;    // 主音量 (0.0 ~ 1.0)
-    bool auto_mode;         // true = 自动翻页, false = 手动点击
-    float auto_interval;    // 自动翻页间隔（秒）
-    float auto_timer;       // 自动翻页计时器
+    /* Settings */
+    float master_volume;    /* Master volume level (0.0 – 1.0) */
+    bool auto_mode;         /* true = auto-advance dialogue, false = manual click */
+    float auto_interval;    /* Seconds between auto-advance steps */
+    float auto_timer;       /* Accumulator for auto-advance timing */
 
-    // Texture UI 用于标题画面
+    /* Title screen UI textures */
     Texture2D titleBackground;
     Texture2D titleLogo;
     Texture2D gamemeLabLogo;
     Texture2D btnStart;
     Texture2D btnMenu;
     Texture2D btnExit;
+    Texture2D forestBackground;   // 森林背景
+    Texture2D computerImage;      // 电脑图片
+
+    /* 当前场景的背景纹理 */
+    Texture2D currentBackground;
+    /* 当前说话者的立绘纹理 */
+    Texture2D currentPortrait;
+    /* 记录已加载的背景文件名，用于判断是否需要重新加载 */
+    char currentBackgroundPath[256];
+    /* 记录已加载的立绘对应的说话者，用于判断是否需要重新加载 */
+    char currentSpeaker[64];
+
+    struct MinigameContext* minigame;   // 指向小游戏内部状态的指针
 } GameContext;
 
-// 全局游戏上下文
+/* Global game context — single instance shared across modules */
 extern GameContext game;
 
-// 函数声明
-void InitGame(void);
-void UpdateGame(void);
-void DrawGame(void);
-void UnloadGame(void);
+/* Core lifecycle functions */
+void InitGame(void);    /* Load assets and set initial state */
+void UpdateGame(void);  /* Per-frame logic dispatch */
+void DrawGame(void);    /* Per-frame render dispatch */
+void UnloadGame(void);  /* Release all loaded resources */
 
 #endif
