@@ -2,7 +2,7 @@
     "scenes": [
         {
             "id": "scene1",
-            "background": "bg_classroom.png",
+            "background": "computer.jpg",
             "dialogues": [
                 {"speaker": "???", "text": "You shouldn't be playing this, this is not a game."},
                 {"speaker": "Player", "text": "Who's that?"},
@@ -10,15 +10,15 @@
                 {"speaker": "Player", "text": "You said that you're a game yourself, so why can't I play you?"}
             ],
             "choices": [
-                {"text": "Continue to assk", "next_scene": "scene2"},
+                {"text": "Continue to ask", "next_scene": "scene2"},
                 {"text": "Quit a game", "next_scene": "title"}
             ]
         },
         {
             "id": "scene2",
-            "background": "bg_corridor.png",
+            "background": "computer.jpg",
             "dialogues": [
-                {"speaker": "Game", "text": "In short,you can't play."},
+                {"speaker": "???", "text": "In short,you can't play."},
                 {"speaker": "Player", "text": "I don't believe it."}
             ],
             "choices": []

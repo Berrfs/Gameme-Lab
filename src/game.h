@@ -7,6 +7,7 @@
 
 #include "scene.h"
 #include "raylib.h"
+#include "minigame.h"  
 #include <string.h>  /* For string operations (strcpy, strcmp, strlen) */
 
 /* Enum representing all possible game states */
@@ -15,7 +16,8 @@ typedef enum GameState {
     STATE_NAME_INPUT,  /* Player name input screen */
     STATE_PLAYING,     /* Story dialogue playback */
     STATE_CHOICE,      /* Branching choice overlay */
-    STATE_SETTINGS     /* Settings / options menu */
+    STATE_SETTINGS,     /* Settings / options menu */
+    STATE_MINIGAME      // 新增
 } GameState;
 
 /* Master struct that holds the entire runtime state of the game */
@@ -40,6 +42,19 @@ typedef struct GameContext {
     Texture2D btnStart;
     Texture2D btnMenu;
     Texture2D btnExit;
+    Texture2D forestBackground;   // 森林背景
+    Texture2D computerImage;      // 电脑图片
+
+    /* 当前场景的背景纹理 */
+    Texture2D currentBackground;
+    /* 当前说话者的立绘纹理 */
+    Texture2D currentPortrait;
+    /* 记录已加载的背景文件名，用于判断是否需要重新加载 */
+    char currentBackgroundPath[256];
+    /* 记录已加载的立绘对应的说话者，用于判断是否需要重新加载 */
+    char currentSpeaker[64];
+
+    struct MinigameContext* minigame;   // 指向小游戏内部状态的指针
 } GameContext;
 
 /* Global game context — single instance shared across modules */
