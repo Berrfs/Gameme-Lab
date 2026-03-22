@@ -10,6 +10,10 @@
 #include "minigame.h"  
 #include <string.h>  /* For string operations (strcpy, strcmp, strlen) */
 
+/* Base resolution for UI scaling (UI缩放的基础分辨率) */
+#define BASE_SCREEN_WIDTH 1280
+#define BASE_SCREEN_HEIGHT 720
+
 /* Enum representing all possible game states */
 typedef enum GameState {
     STATE_TITLE,       /* Title / splash screen */
@@ -34,6 +38,11 @@ typedef struct GameContext {
     bool auto_mode;         /* true = auto-advance dialogue, false = manual click */
     float auto_interval;    /* Seconds between auto-advance steps */
     float auto_timer;       /* Accumulator for auto-advance timing */
+
+    /* Window settings (窗口设置) */
+    bool fullscreen;        /* true = fullscreen, false = windowed */
+    int window_width;       /* Window width in windowed mode (窗口模式下的宽度) */
+    int window_height;      /* Window height in windowed mode (窗口模式下的高度) */
 
     /* Title screen UI textures */
     Texture2D titleBackground;
