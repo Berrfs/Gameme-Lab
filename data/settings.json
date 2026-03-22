@@ -1,4 +1,9 @@
 {
-    "master_volume": 0.8,
-    "text_speed": 30
+	"master_volume":	0.800000011920929,
+	"text_speed":	30,
+	"auto_mode":	false,
+	"auto_interval":	0,
+	"fullscreen":	false,
+	"window_width":	1280,
+	"window_height":	720
 }
