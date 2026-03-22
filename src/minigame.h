@@ -25,7 +25,7 @@ typedef struct {
     const char* text;
 } MiniDialogue;
 
-// 小游戏主上下文
+// 小游戏主上下文（外部不可直接访问，内部由 minigame.c 维护）
 typedef struct MinigameContext {
     int currentWall;                     // 当前墙面索引 0~2
     Texture2D wallTextures[WALL_COUNT];  // 三面墙的背景图
