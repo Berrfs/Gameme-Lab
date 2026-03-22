@@ -7,6 +7,7 @@
 #include "game.h"
 #include "raylib.h"
 #include "minigame.h"
+#include "cJSON/cJSON.h"
 #include <stdio.h>
 #include <string.h>   /* For strcpy, strcmp, strlen (用于 strcpy、strcmp、strlen) */
 
@@ -26,6 +27,9 @@ static void HandleNameInput(void);
 static void SelectChoice(int index);
 static bool IsButtonClicked(Texture2D tex, int posX, int posY, float scale);
 static bool IsButtonHovered(Texture2D tex, int posX, int posY, float scale);
+static void LoadSettings(void);
+static void SaveSettings(void);
+static void HandleFullscreenToggle(void);
 
 /* --- Utility: check if a texture-based button was clicked this frame (检查纹理按钮在这一帧是否被点击) --- */
 static bool IsButtonClicked(Texture2D tex, int posX, int posY, float scale) {
@@ -43,21 +47,39 @@ static bool IsButtonHovered(Texture2D tex, int posX, int posY, float scale) {
     return CheckCollisionPointRec(GetMousePosition(), btnRect);
 }
 
+/* --- Utility: calculate UI scale factor based on current screen resolution (根据当前屏幕分辨率计算UI缩放因子) --- */
+static float GetUIScale(void) {
+    int screenWidth = GetScreenWidth();
+    int screenHeight = GetScreenHeight();
+    float scaleX = screenWidth / (float)BASE_SCREEN_WIDTH;
+    float scaleY = screenHeight / (float)BASE_SCREEN_HEIGHT;
+    /* Use the minimum scale to maintain aspect ratio (使用最小缩放以保持宽高比) */
+    return scaleX < scaleY ? scaleX : scaleY;
+}
+
 /* ========== Initialization (初始化) ========== */
 void InitGame(void) {
     /* Load scene data from the JSON script file (从 JSON 脚本文件中加载场景数据) */
     LoadScenesFromJSON("data/scenes.json");
+
+    /* Load settings from JSON (从 JSON 加载设置) */
+    LoadSettings();
 
     /* Set the starting game state (设置初始游戏状态) */
     game.state = STATE_TITLE;
     game.current_scene = GetSceneByID("scene1");
     game.dialogue_index = 0;
 
-    /* Default settings (默认设置) */
-    game.master_volume = 0.8f;
-    game.auto_mode = false;
-    game.auto_interval = 2.0f;
-    game.auto_timer = 0.0f;
+    /* Default settings if not loaded from file (如果未从文件加载，使用默认设置) */
+    if (game.master_volume == 0.0f && game.auto_interval == 0.0f) {
+        game.master_volume = 0.8f;
+        game.auto_mode = false;
+        game.auto_interval = 2.0f;
+        game.auto_timer = 0.0f;
+        game.fullscreen = false;
+        game.window_width = 1280;
+        game.window_height = 720;
+    }
 
     /* Set a default player name (设置默认玩家名称) */
     strcpy(game.player_name, "Player");
@@ -132,6 +154,7 @@ void UnloadGame(void) {
 static void DrawTitle(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
+    float uiScale = GetUIScale();
 
     /* Draw the full-screen background image (绘制全屏背景图) */
     DrawTexturePro(game.titleBackground,
@@ -140,18 +163,18 @@ static void DrawTitle(void) {
         (Vector2){0, 0}, 0.0f, WHITE);
 
     /* 1) Left side — large "NO WAY!" logo, scaled down for 720p (左侧——大"NO WAY!"标志，缩小以适配720p) */
-    float logoScale = 0.30f;
+    float logoScale = 0.30f * uiScale;
     int logoW = (int)(game.titleLogo.width * logoScale);
     int logoH = (int)(game.titleLogo.height * logoScale);
-    int logoX = 30;
+    int logoX = (int)(30 * uiScale);
     int logoY = (screenHeight - logoH) / 2;
     DrawTextureEx(game.titleLogo, (Vector2){ (float)logoX, (float)logoY }, 0.0f, logoScale, WHITE);
 
     /* 2) Top-right — "Gameme Lab" icon (右上角——"Gameme Lab"图标) */
-    float glScale = 0.55f;
+    float glScale = 0.55f * uiScale;
     int glW = (int)(game.gamemeLabLogo.width * glScale);
-    int glX = screenWidth - glW - 30;
-    int glY = 20;
+    int glX = screenWidth - glW - (int)(30 * uiScale);
+    int glY = (int)(20 * uiScale);
     DrawTextureEx(game.gamemeLabLogo, (Vector2){ (float)glX, (float)glY }, 0.0f, glScale, WHITE);
 
     int rightAreaCenterX = screenWidth * 3 / 4;
@@ -160,7 +183,7 @@ static void DrawTitle(void) {
     bool anyHovered = false;
 
     /* 3) "Touch to start" button — scales up slightly on hover ("开始"按钮——悬停时略微放大) */
-    float startScale = 0.28f;
+    float startScale = 0.28f * uiScale;
     int startW = (int)(game.btnStart.width * startScale);
     int startH = (int)(game.btnStart.height * startScale);
     int startX = rightAreaCenterX - startW / 2;
@@ -177,11 +200,11 @@ static void DrawTitle(void) {
     }
 
     /* 4) "Menu" button — scales up slightly on hover ("菜单"按钮——悬停时略微放大) */
-    float menuScale = 0.08f;
+    float menuScale = 0.08f * uiScale;
     int menuW = (int)(game.btnMenu.width * menuScale);
     int menuH = (int)(game.btnMenu.height * menuScale);
     int menuX = rightAreaCenterX - menuW / 2;
-    int menuY = startY + startH + 20;
+    int menuY = startY + startH + (int)(20 * uiScale);
     bool menuHov = IsButtonHovered(game.btnMenu, menuX, menuY, menuScale);
     if (menuHov) anyHovered = true;
     if (menuHov) {
@@ -194,11 +217,11 @@ static void DrawTitle(void) {
     }
 
     /* 5) "Exit" button — scales up slightly on hover ("退出"按钮——悬停时略微放大) */
-    float exitScale = 0.08f;
+    float exitScale = 0.08f * uiScale;
     int exitW = (int)(game.btnExit.width * exitScale);
     int exitH = (int)(game.btnExit.height * exitScale);
     int exitX = rightAreaCenterX - exitW / 2;
-    int exitY = menuY + menuH + 20;
+    int exitY = menuY + menuH + (int)(20 * uiScale);
     bool exitHov = IsButtonHovered(game.btnExit, exitX, exitY, exitScale);
     if (exitHov) anyHovered = true;
     if (exitHov) {
@@ -218,22 +241,23 @@ static void DrawTitle(void) {
 static void HandleTitleInput(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
+    float uiScale = GetUIScale();
     int rightAreaCenterX = screenWidth * 3 / 4;
 
     /* Recalculate button positions, must match DrawTitle (重新计算按钮位置，必须与DrawTitle一致) */
-    float startScale = 0.28f;
+    float startScale = 0.28f * uiScale;
     int startW = (int)(game.btnStart.width * startScale);
     int startH = (int)(game.btnStart.height * startScale);
     int startX = rightAreaCenterX - startW / 2;
     int startY = (int)(screenHeight * 0.40f);
 
-    float menuScale = 0.08f;
+    float menuScale = 0.08f * uiScale;
     int menuW = (int)(game.btnMenu.width * menuScale);
     int menuH = (int)(game.btnMenu.height * menuScale);
     int menuX = rightAreaCenterX - menuW / 2;
-    int menuY = startY + startH + 20;
+    int menuY = startY + startH + (int)(20 * uiScale);
 
-    float exitScale = 0.08f;
+    float exitScale = 0.08f * uiScale;
     int exitW = (int)(game.btnExit.width * exitScale);
     int exitH = (int)(game.btnExit.height * exitScale);
     int exitX = rightAreaCenterX - exitW / 2;
@@ -266,6 +290,7 @@ static void HandleTitleInput(void) {
 static void DrawNameInput(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
+    float uiScale = GetUIScale();
 
     /* Draw the computer image as full-screen background (将电脑图片作为全屏背景绘制) */
     DrawTexturePro(game.computerImage,
@@ -274,8 +299,8 @@ static void DrawNameInput(void) {
         (Vector2){0, 0}, 0.0f, WHITE);
 
     /* Input box area, centered on screen (输入框区域，居中于屏幕) */
-    int boxWidth = 500;
-    int boxHeight = 60;
+    int boxWidth = (int)(500 * uiScale);
+    int boxHeight = (int)(60 * uiScale);
     int boxX = (screenWidth - boxWidth) / 2;
     int boxY = (screenHeight - boxHeight) / 2;
 
@@ -284,31 +309,31 @@ static void DrawNameInput(void) {
 
     /* Prompt text above the input box (输入框上方的提示文字) */
     const char *prompt = "Please enter your name (max 20 chars):";
-    int promptFontSize = 24;
+    int promptFontSize = (int)(24 * uiScale);
     int promptWidth = MeasureText(prompt, promptFontSize);
     int promptX = (screenWidth - promptWidth) / 2;
-    int promptY = boxY - 40;
+    int promptY = boxY - (int)(40 * uiScale);
     DrawText(prompt, promptX, promptY, promptFontSize, WHITE);
 
     /* Player name text inside the input box (输入框内的玩家名称文本) */
-    int fontSize = 32;
+    int fontSize = (int)(32 * uiScale);
     int textWidth = MeasureText(game.player_name, fontSize);
-    int textX = boxX + 15;
+    int textX = boxX + (int)(15 * uiScale);
     int textY = boxY + (boxHeight - fontSize) / 2;
     DrawText(game.player_name, textX, textY, fontSize, WHITE);
 
     /* Blinking text cursor (闪烁的文本光标) */
     if (((int)(GetTime() * 2) % 2) == 0) {
         int caretX = textX + textWidth;
-        DrawRectangle(caretX, textY, 3, fontSize, YELLOW);
+        DrawRectangle(caretX, textY, (int)(3 * uiScale), fontSize, YELLOW);
     }
 
     /* Confirmation hint below the input box (输入框下方的确认提示) */
     const char *hint = "Press ENTER to confirm";
-    int hintFontSize = 20;
+    int hintFontSize = (int)(20 * uiScale);
     int hintWidth = MeasureText(hint, hintFontSize);
     int hintX = (screenWidth - hintWidth) / 2;
-    int hintY = boxY + boxHeight + 15;
+    int hintY = boxY + boxHeight + (int)(15 * uiScale);
     DrawText(hint, hintX, hintY, hintFontSize, YELLOW);
 }
 
@@ -360,6 +385,7 @@ static void DrawPlaying(void) {
 
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
+    float uiScale = GetUIScale();
 
     /* Draw scene background, full screen (绘制场景背景，全屏) */
     if (game.currentBackground.id != 0) {
@@ -372,19 +398,19 @@ static void DrawPlaying(void) {
     }
 
     /* Draw character portrait, left side, aligned above dialogue box (绘制角色立绘，左侧，对齐对话框上方) */
-    int dialogBoxHeight = 150;
-    int dialogBoxY = screenHeight - dialogBoxHeight - 20;
+    int dialogBoxHeight = (int)(150 * uiScale);
+    int dialogBoxY = screenHeight - dialogBoxHeight - (int)(20 * uiScale);
     if (game.currentPortrait.id != 0) {
         float portraitHeight = screenHeight * 0.35f;
         float scale = portraitHeight / game.currentPortrait.height;
         float portraitW = game.currentPortrait.width * scale;
-        float portraitX = screenWidth - portraitW - 20;
-        float portraitY = dialogBoxY - portraitHeight + 10;
+        float portraitX = screenWidth - portraitW - (int)(20 * uiScale);
+        float portraitY = dialogBoxY - portraitHeight + (int)(10 * uiScale);
         DrawTextureEx(game.currentPortrait, (Vector2){portraitX, portraitY}, 0.0f, scale, WHITE);
     }
 
     /* Draw bottom dialogue box, semi-transparent (绘制底部半透明对话框) */
-    DrawRectangle(20, dialogBoxY, screenWidth - 40, dialogBoxHeight, (Color){0, 0, 0, 180});
+    DrawRectangle((int)(20 * uiScale), dialogBoxY, screenWidth - (int)(40 * uiScale), dialogBoxHeight, (Color){0, 0, 0, 180});
 
     if (game.dialogue_index < sc->dialogue_count) {
         Dialogue *d = &sc->dialogues[game.dialogue_index];
@@ -394,15 +420,15 @@ static void DrawPlaying(void) {
         if (strcmp(speaker, "Player") == 0) {
             speaker = game.player_name;
         }
-        DrawText(speaker, 40, dialogBoxY + 12, 28, MAROON);
-        DrawText(d->text, 40, dialogBoxY + 50, 26, WHITE);
+        DrawText(speaker, (int)(40 * uiScale), dialogBoxY + (int)(12 * uiScale), (int)(28 * uiScale), MAROON);
+        DrawText(d->text, (int)(40 * uiScale), dialogBoxY + (int)(50 * uiScale), (int)(26 * uiScale), WHITE);
     } else {
-        int msgWidth = MeasureText("End of scene. Press ESC to title.", 30);
-        DrawText("End of scene. Press ESC to title.", (screenWidth - msgWidth) / 2, screenHeight / 2, 30, BLACK);
+        int msgWidth = MeasureText("End of scene. Press ESC to title.", (int)(30 * uiScale));
+        DrawText("End of scene. Press ESC to title.", (screenWidth - msgWidth) / 2, screenHeight / 2, (int)(30 * uiScale), BLACK);
     }
 
     /* Show current mode, auto or manual (显示当前模式，自动或手动) */
-    DrawText(TextFormat("Mode: %s", game.auto_mode ? "AUTO" : "MANUAL"), 15, 10, 20, BLACK);
+    DrawText(TextFormat("Mode: %s", game.auto_mode ? "AUTO" : "MANUAL"), (int)(15 * uiScale), (int)(10 * uiScale), (int)(20 * uiScale), BLACK);
 }
 
 
@@ -531,6 +557,7 @@ static void DrawChoice(void) {
 
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
+    float uiScale = GetUIScale();
 
     /* Draw the scene background behind the overlay (在覆盖层后面绘制场景背景) */
     if (game.currentBackground.id != 0) {
@@ -545,8 +572,8 @@ static void DrawChoice(void) {
         float portraitHeight = screenHeight * 0.30f;
         float scale = portraitHeight / game.currentPortrait.height;
         float portraitW = game.currentPortrait.width * scale;
-        float portraitX = screenWidth - portraitW - 25;
-        float portraitY = screenHeight - portraitHeight - 160;
+        float portraitX = screenWidth - portraitW - (int)(25 * uiScale);
+        float portraitY = screenHeight - portraitHeight - (int)(160 * uiScale);
         DrawTextureEx(game.currentPortrait, (Vector2){portraitX, portraitY}, 0.0f, scale, WHITE);
     }
 
@@ -555,9 +582,9 @@ static void DrawChoice(void) {
 
     int startX = screenWidth / 4;
     int startY = (int)(screenHeight * 0.30f);
-    int rowGap = 55;
-    int panelPadding = 20;
-    int panelHeight = sc->choice_count * rowGap + 60;
+    int rowGap = (int)(55 * uiScale);
+    int panelPadding = (int)(20 * uiScale);
+    int panelHeight = sc->choice_count * rowGap + (int)(60 * uiScale);
 
     /* Draw a semi-transparent panel behind choices for readability (在选项后绘制半透明面板以增加可读性) */
     DrawRectangle(startX - panelPadding, startY - panelPadding,
@@ -573,18 +600,18 @@ static void DrawChoice(void) {
 
     for (int i = 0; i < sc->choice_count; i++) {
         int choiceY = startY + i * rowGap;
-        Rectangle choiceRect = { (float)startX, (float)(choiceY - 5), (float)(screenWidth / 2), 40 };
+        Rectangle choiceRect = { (float)startX, (float)(choiceY - 5), (float)(screenWidth / 2), (float)(40 * uiScale) };
         bool hovered = CheckCollisionPointRec(mouse, choiceRect);
         if (hovered) anyHovered = true;
 
         /* Highlight bar behind hovered choice (悬停选项的高亮条) */
         if (hovered) {
-            DrawRectangle(startX - 10, choiceY - 5, screenWidth / 2 + 20, 40, (Color){255, 200, 50, 40});
+            DrawRectangle(startX - (int)(10 * uiScale), choiceY - 5, screenWidth / 2 + (int)(20 * uiScale), (int)(40 * uiScale), (Color){255, 200, 50, 40});
         }
         Color color = hovered ? YELLOW : WHITE;
-        DrawText(TextFormat("%d. %s", i+1, sc->choices[i].text), startX, choiceY, 32, color);
+        DrawText(TextFormat("%d. %s", i+1, sc->choices[i].text), startX, choiceY, (int)(32 * uiScale), color);
     }
-    DrawText("Press number key to choose", startX, startY + sc->choice_count * rowGap + 5, 22, GRAY);
+    DrawText("Press number key to choose", startX, startY + sc->choice_count * rowGap + (int)(5 * uiScale), (int)(22 * uiScale), GRAY);
 
     /* Change cursor to hand pointer when hovering a choice (悬停选项时将光标改为手型指针) */
     SetMouseCursor(anyHovered ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
@@ -644,34 +671,41 @@ static void SelectChoice(int index) {
 static void DrawSettings(void) {
     int screenWidth = GetScreenWidth();
     int screenHeight = GetScreenHeight();
-    int sliderW = 500;
+    float uiScale = GetUIScale();
+    int sliderW = (int)(500 * uiScale);
     int leftX = (screenWidth - sliderW) / 2;
-    int baseY = 80;
+    int baseY = (int)(80 * uiScale);
 
     /* Title (标题) */
-    int titleW = MeasureText("Settings", 48);
-    DrawText("Settings", (screenWidth - titleW) / 2, baseY, 48, BLACK);
+    int titleW = MeasureText("Settings", (int)(48 * uiScale));
+    DrawText("Settings", (screenWidth - titleW) / 2, baseY, (int)(48 * uiScale), BLACK);
 
     /* Master volume slider (主音量滑块) */
-    DrawText(TextFormat("Master Volume: %.0f%%", game.master_volume * 100), leftX, baseY + 100, 28, BLACK);
-    DrawRectangle(leftX, baseY + 140, sliderW, 30, LIGHTGRAY);
-    DrawRectangle(leftX, baseY + 140, (int)(sliderW * game.master_volume), 30, BLUE);
+    DrawText(TextFormat("Master Volume: %.0f%%", game.master_volume * 100), leftX, baseY + (int)(100 * uiScale), (int)(28 * uiScale), BLACK);
+    DrawRectangle(leftX, baseY + (int)(140 * uiScale), sliderW, (int)(30 * uiScale), LIGHTGRAY);
+    DrawRectangle(leftX, baseY + (int)(140 * uiScale), (int)(sliderW * game.master_volume), (int)(30 * uiScale), BLUE);
 
     /* Auto-mode on/off indicator (自动模式开关指示器) */
-    DrawText(TextFormat("Auto Mode: %s", game.auto_mode ? "ON" : "OFF"), leftX, baseY + 210, 28, BLACK);
-    DrawRectangle(leftX, baseY + 250, sliderW, 30, LIGHTGRAY);
-    DrawRectangle(leftX, baseY + 250, (int)(sliderW * (game.auto_mode ? 1 : 0)), 30, PURPLE);
-    DrawText("Press M to toggle Auto/Manual", leftX, baseY + 290, 22, BLACK);
+    DrawText(TextFormat("Auto Mode: %s", game.auto_mode ? "ON" : "OFF"), leftX, baseY + (int)(210 * uiScale), (int)(28 * uiScale), BLACK);
+    DrawRectangle(leftX, baseY + (int)(250 * uiScale), sliderW, (int)(30 * uiScale), LIGHTGRAY);
+    DrawRectangle(leftX, baseY + (int)(250 * uiScale), (int)(sliderW * (game.auto_mode ? 1 : 0)), (int)(30 * uiScale), PURPLE);
+    DrawText("Press M to toggle Auto/Manual", leftX, baseY + (int)(290 * uiScale), (int)(22 * uiScale), BLACK);
 
     /* Auto-advance interval slider (自动推进间隔滑块) */
-    DrawText(TextFormat("Auto Interval: %.1f s", game.auto_interval), leftX, baseY + 350, 28, BLACK);
-    DrawRectangle(leftX, baseY + 390, sliderW, 30, LIGHTGRAY);
-    DrawRectangle(leftX, baseY + 390, (int)(sliderW * (game.auto_interval / 5.0f)), 30, ORANGE);
-    DrawText("Up/Down: adjust interval (0.5~5.0s)", leftX, baseY + 430, 22, BLACK);
+    DrawText(TextFormat("Auto Interval: %.1f s", game.auto_interval), leftX, baseY + (int)(350 * uiScale), (int)(28 * uiScale), BLACK);
+    DrawRectangle(leftX, baseY + (int)(390 * uiScale), sliderW, (int)(30 * uiScale), LIGHTGRAY);
+    DrawRectangle(leftX, baseY + (int)(390 * uiScale), (int)(sliderW * (game.auto_interval / 5.0f)), (int)(30 * uiScale), ORANGE);
+    DrawText("Up/Down: adjust interval (0.5~5.0s)", leftX, baseY + (int)(430 * uiScale), (int)(22 * uiScale), BLACK);
+
+    /* Fullscreen toggle indicator (全屏切换指示器) */
+    DrawText(TextFormat("Fullscreen: %s", game.fullscreen ? "ON" : "OFF"), leftX, baseY + (int)(500 * uiScale), (int)(28 * uiScale), BLACK);
+    DrawRectangle(leftX, baseY + (int)(540 * uiScale), sliderW, (int)(30 * uiScale), LIGHTGRAY);
+    DrawRectangle(leftX, baseY + (int)(540 * uiScale), (int)(sliderW * (game.fullscreen ? 1 : 0)), (int)(30 * uiScale), GREEN);
+    DrawText("Press F to toggle Fullscreen", leftX, baseY + (int)(580 * uiScale), (int)(22 * uiScale), BLACK);
 
     /* Back button hint (返回按钮提示) */
-    int backW = MeasureText("Press B to go back", 28);
-    DrawText("Press B to go back", (screenWidth - backW) / 2, screenHeight - 60, 28, DARKGRAY);
+    int backW = MeasureText("Press B to go back", (int)(28 * uiScale));
+    DrawText("Press B to go back", (screenWidth - backW) / 2, screenHeight - (int)(60 * uiScale), (int)(28 * uiScale), DARKGRAY);
 }
 
 /* Handle settings input: volume, auto-mode toggle, interval adjustment (处理设置输入：音量、自动模式切换、间隔调整) */
@@ -701,6 +735,121 @@ static void HandleSettingsInput(void) {
         if (game.auto_interval < 0.5f) game.auto_interval = 0.5f;
     }
 
+    /* Toggle fullscreen mode (切换全屏模式) */
+    if (IsKeyPressed(KEY_F)) {
+        HandleFullscreenToggle();
+    }
+
     /* Press B to return to the title screen (按 B 返回标题画面) */
-    if (IsKeyPressed(KEY_B)) game.state = STATE_TITLE;
+    if (IsKeyPressed(KEY_B)) {
+        SaveSettings();
+        game.state = STATE_TITLE;
+    }
+}
+
+/* ==================== Settings Persistence (设置持久化) ==================== */
+
+/* Load settings from data/settings.json (从 data/settings.json 加载设置) */
+static void LoadSettings(void) {
+    char *json_str = LoadFileText("data/settings.json");
+    if (!json_str) {
+        TraceLog(LOG_WARNING, "Failed to load settings.json");
+        return;
+    }
+
+    cJSON *root = cJSON_Parse(json_str);
+    UnloadFileText(json_str);
+
+    if (!root) {
+        TraceLog(LOG_WARNING, "JSON parse error in settings.json");
+        return;
+    }
+
+    /* Load volume setting (加载音量设置) */
+    cJSON *volume = cJSON_GetObjectItem(root, "master_volume");
+    if (volume && volume->type == cJSON_Number) {
+        game.master_volume = (float)volume->valuedouble;
+    }
+
+    /* Load auto mode setting (加载自动模式设置) */
+    cJSON *auto_mode = cJSON_GetObjectItem(root, "auto_mode");
+    if (auto_mode && auto_mode->type == cJSON_True) {
+        game.auto_mode = true;
+    } else {
+        game.auto_mode = false;
+    }
+
+    /* Load auto interval setting (加载自动间隔设置) */
+    cJSON *auto_interval = cJSON_GetObjectItem(root, "auto_interval");
+    if (auto_interval && auto_interval->type == cJSON_Number) {
+        game.auto_interval = (float)auto_interval->valuedouble;
+    }
+
+    /* Load fullscreen setting (加载全屏设置) */
+    cJSON *fullscreen = cJSON_GetObjectItem(root, "fullscreen");
+    if (fullscreen && fullscreen->type == cJSON_True) {
+        game.fullscreen = true;
+    } else {
+        game.fullscreen = false;
+    }
+
+    /* Load window dimensions (加载窗口尺寸) */
+    cJSON *width = cJSON_GetObjectItem(root, "window_width");
+    if (width && width->type == cJSON_Number) {
+        game.window_width = width->valueint;
+    } else {
+        game.window_width = 1280;
+    }
+
+    cJSON *height = cJSON_GetObjectItem(root, "window_height");
+    if (height && height->type == cJSON_Number) {
+        game.window_height = height->valueint;
+    } else {
+        game.window_height = 720;
+    }
+
+    cJSON_Delete(root);
+    TraceLog(LOG_INFO, "Settings loaded successfully");
+}
+
+/* Save settings to data/settings.json (保存设置到 data/settings.json) */
+static void SaveSettings(void) {
+    cJSON *root = cJSON_CreateObject();
+    if (!root) return;
+
+    /* Save all current settings (保存所有当前设置) */
+    cJSON_AddNumberToObject(root, "master_volume", game.master_volume);
+    cJSON_AddNumberToObject(root, "text_speed", 30);  /* Placeholder for future use (未来使用的占位符) */
+    cJSON_AddBoolToObject(root, "auto_mode", game.auto_mode);
+    cJSON_AddNumberToObject(root, "auto_interval", game.auto_interval);
+    cJSON_AddBoolToObject(root, "fullscreen", game.fullscreen);
+    cJSON_AddNumberToObject(root, "window_width", game.window_width);
+    cJSON_AddNumberToObject(root, "window_height", game.window_height);
+
+    /* Convert to JSON string and write to file (转换为 JSON 字符串并写入文件) */
+    char *json_str = cJSON_Print(root);
+    if (json_str) {
+        FILE *file = fopen("data/settings.json", "w");
+        if (file) {
+            fprintf(file, "%s", json_str);
+            fclose(file);
+            TraceLog(LOG_INFO, "Settings saved successfully");
+        }
+        free(json_str);
+    }
+
+    cJSON_Delete(root);
+}
+
+/* Toggle fullscreen mode and update window (切换全屏模式并更新窗口) */
+static void HandleFullscreenToggle(void) {
+    game.fullscreen = !game.fullscreen;
+    ToggleFullscreen();  /* raylib's built-in fullscreen toggle */
+    SaveSettings();
+    
+    if (game.fullscreen) {
+        TraceLog(LOG_INFO, "Switched to fullscreen mode");
+    } else {
+        TraceLog(LOG_INFO, "Switched to windowed mode");
+    }
 }
