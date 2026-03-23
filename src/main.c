@@ -6,10 +6,64 @@
 
 #include "raylib.h"
 #include "game.h"
+#include "cJSON/cJSON.h"
+#include <stdio.h>
+
+/* Load only window settings from data/settings.json (仅从 data/settings.json 加载窗口设置) */
+void LoadWindowSettings(int *width, int *height, bool *fullscreen) {
+    *width = 1280;
+    *height = 720;
+    *fullscreen = false;
+
+    FILE *file = fopen("data/settings.json", "r");
+    if (!file) return;
+
+    fseek(file, 0, SEEK_END);
+    long size = ftell(file);
+    fseek(file, 0, SEEK_SET);
+
+    char *content = (char *)malloc(size + 1);
+    fread(content, 1, size, file);
+    content[size] = '\0';
+    fclose(file);
+
+    cJSON *root = cJSON_Parse(content);
+    free(content);
+
+    if (!root) return;
+
+    cJSON *width_obj = cJSON_GetObjectItem(root, "window_width");
+    if (width_obj && width_obj->type == cJSON_Number) {
+        *width = width_obj->valueint;
+    }
+
+    cJSON *height_obj = cJSON_GetObjectItem(root, "window_height");
+    if (height_obj && height_obj->type == cJSON_Number) {
+        *height = height_obj->valueint;
+    }
+
+    cJSON *fullscreen_obj = cJSON_GetObjectItem(root, "fullscreen");
+    if (fullscreen_obj && fullscreen_obj->type == cJSON_True) {
+        *fullscreen = true;
+    }
+
+    cJSON_Delete(root);
+}
 
 int main(void) {
-    /* Create a 1280x720 window titled "No way!" (创建一个 1280x720 的窗口，标题为 "No way!") */
-    InitWindow(1280, 720, "No way!");
+    /* Load window settings before initializing (初始化前加载窗口设置) */
+    int window_width = 1280;
+    int window_height = 720;
+    bool fullscreen = false;
+    LoadWindowSettings(&window_width, &window_height, &fullscreen);
+
+    /* Set fullscreen flag if needed (如果需要，设置全屏标志) */
+    if (fullscreen) {
+        SetConfigFlags(FLAG_FULLSCREEN_MODE);
+    }
+
+    /* Create a 1280x720 window titled "No way!" (创建一个窗口，标题为 "No way!") */
+    InitWindow(window_width, window_height, "No way!");
     /* Lock the frame rate to 60 FPS (将帧率锁定为 60 FPS) */
     SetTargetFPS(60);
 
