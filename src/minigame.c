@@ -95,9 +95,9 @@ static void UpdateItemRects(void);      // 动态计算精准的点击与绘制�
 
 /* ------------------ 初始化小游戏 ------------------ */
 void InitMinigame(void) {
-    mg.wallTextures[0] = LoadTexture("UI/computer.jpg");
-    mg.wallTextures[1] = LoadTexture("UI/red curtain.jpg");
-    mg.wallTextures[2] = LoadTexture("assets/backstage_wall3.png");
+    mg.wallTextures[0] = LoadTexture("UI/bg_wall_0.png");
+    mg.wallTextures[1] = LoadTexture("UI/bg_wall_1.png");
+    mg.wallTextures[2] = LoadTexture("UI/bg_wall_2.png");
 
     mg.arrowLeft  = LoadTexture("UI/arrow_left.png");
     mg.arrowRight = LoadTexture("UI/arrow_right.png");
@@ -132,7 +132,7 @@ void InitMinigame(void) {
     };
     mg.items[5] = (Item){
         .id = 5, .name = "Nail", .texture = LoadTexture("UI/nail.png"),
-        .wallIndex = 1, .interactRect = {0}, .isPickedUp = false, .visible = false
+        .wallIndex = 2, .interactRect = {0}, .isPickedUp = false, .visible = false
     };
     mg.items[6] = (Item){
         .id = 6, .name = "Hammer", .texture = LoadTexture("UI/hammer.png"),
@@ -143,20 +143,20 @@ void InitMinigame(void) {
     // cx, cy: 0.5f 代表屏幕正中央，0.0f 代表最左/上，1.0f 代表最右/下
     // scale: 放大倍数。
     
-    // 画框 (id=2)
-    mg.itemLayouts[0] = (ItemLayout){ .cx = 0.20f, .cy = 0.25f, .scale = 0.5f }; 
-    // 打字机 (id=1)
-    mg.itemLayouts[1] = (ItemLayout){ .cx = 0.50f, .cy = 0.50f, .scale = 0.4f }; 
-    // 画 (id=0, 与画框参数保持一致)
-    mg.itemLayouts[2] = (ItemLayout){ .cx = 0.20f, .cy = 0.25f, .scale = 0.5f }; 
-    // 门 (id=3)
-    mg.itemLayouts[3] = (ItemLayout){ .cx = 0.80f, .cy = 0.63f, .scale = 1.2f }; 
-    // 钥匙 (id=4)
-    mg.itemLayouts[4] = (ItemLayout){ .cx = 0.20f, .cy = 0.80f, .scale = 0.3f }; 
-    // 钉子 (id=5)
-    mg.itemLayouts[5] = (ItemLayout){ .cx = 0.50f, .cy = 0.80f, .scale = 0.2f }; 
-    // 锤子 (id=6)
-    mg.itemLayouts[6] = (ItemLayout){ .cx = 0.70f, .cy = 0.80f, .scale = 0.4f }; 
+    // 画框 (id=2, Wall 0) - Center of the patterned wall
+    mg.itemLayouts[0] = (ItemLayout){ .cx = 0.50f, .cy = 0.35f, .scale = 0.65f }; 
+    // 打字机 (id=1, Wall 1) - On the right side of the plain wall
+    mg.itemLayouts[1] = (ItemLayout){ .cx = 0.72f, .cy = 0.68f, .scale = 0.30f };
+    // 画 (id=0, Wall 0) - Must match frame exactly
+    mg.itemLayouts[2] = (ItemLayout){ .cx = 0.50f, .cy = 0.35f, .scale = 0.65f }; 
+    // 门 (id=3, Wall 1) - Standing against the left side of the plain wall
+    mg.itemLayouts[3] = (ItemLayout){ .cx = 0.28f, .cy = 0.48f, .scale = 1.30f };
+    // 钥匙 (id=4, Wall 0) - Drops on the desk below the picture
+    mg.itemLayouts[4] = (ItemLayout){ .cx = 0.50f, .cy = 0.75f, .scale = 0.3f }; 
+    // 钉子 (id=5, Wall 2) - Drops near the hammer on the floor
+    mg.itemLayouts[5] = (ItemLayout){ .cx = 0.55f, .cy = 0.85f, .scale = 0.2f }; 
+    // 锤子 (id=6, Wall 2) - On the messy floor
+    mg.itemLayouts[6] = (ItemLayout){ .cx = 0.65f, .cy = 0.85f, .scale = 0.4f }; 
 
     // 初始化计算边界
     UpdateItemRects();
@@ -206,6 +206,14 @@ static void UpdateItemRects(void) {
             it->interactRect.y = (sh * layout.cy) - (actualHeight / 2.0f);
             it->interactRect.width = actualWidth;
             it->interactRect.height = actualHeight;
+
+            // 针对门(id=3)手工收缩点击碰撞区，使其更贴合图片中央不透明的位置
+            if (it->id == 3) {
+                it->interactRect.x += actualWidth * 0.25f;       // Cut 25% from left margin
+                it->interactRect.width -= actualWidth * 0.50f;   // Shrink width by 50%
+                it->interactRect.y += actualHeight * 0.20f;      // Cut 20% from top margin
+                it->interactRect.height -= actualHeight * 0.20f; // Shrink height by 20%
+            }
         }
     }
 }
@@ -679,7 +687,7 @@ static void UpdateZoomTypewriter(void) {
 
     int sw = GetScreenWidth(), sh = GetScreenHeight();
     Vector2 mouse = GetMousePosition();
-    Rectangle exitArrowRect = { sw - 80, sh - 80, 60, 60 };
+    Rectangle exitArrowRect = { sw - 80, 40, 60, 60 }; // Match new top-right position
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, exitArrowRect)) {
         mg.mode = MG_MODE_NORMAL;
         return;
@@ -699,29 +707,37 @@ static void DrawZoomTypewriter(void) {
     int drawW = (int)(tex.width * scale);
     int drawH = (int)(tex.height * scale);
     int drawX = sw/2 - drawW/2;
-    int drawY = sh/2 - drawH/2 - 50;
+    int drawY = sh/2 - drawH/2 - 100; // Naikkan seluruh posisi mesin tik
     
     if(tex.id > 0) {
         DrawTextureEx(tex, (Vector2){ drawX, drawY }, 0.0f, scale, WHITE);
     }
 
-    Rectangle textBox = { drawX + 50, drawY + drawH - 80, drawW - 100, 60 };
+    // TextBox turun di bawah spasi mesin tik agar tidak tertimpa
+    Rectangle textBox = { drawX + 70, drawY + 440, drawW - 140, 40 };
     DrawRectangleRec(textBox, DARKGRAY);
-    DrawRectangleLinesEx(textBox, 2, WHITE);
-    DrawText(mg.typewriterInput, textBox.x + 10, textBox.y + 15, 30, LIME);
+    DrawRectangleLinesEx(textBox, 2, LIGHTGRAY);
+    DrawText(mg.typewriterInput, (int)textBox.x + 10, (int)textBox.y + 10, 24, LIME);
 
-    int imgX = 100;
-    int imgY = sh - 250;
+    // Prompt text drawn above the collected images
+    DrawText("Type the words in order: time, walk, bride", sw/2 - 230, drawY + 490, 24, LIGHTGRAY);
+
+    // Draw the collected word images (time, walk, bride) neat and centered
+    float imgScale = 0.35f; // 175px width/height
+    int imgW = (int)(500 * imgScale);
+    int gap = 40;
+    int total_width = (3 * imgW) + (2 * gap);
+    int startX = sw/2 - total_width/2;
+    int imgY = sh - imgW - 10; // place at the very bottom
+    
     for (int i = 0; i < mg.typewriterStep; i++) {
         if (mg.wordImages[i].id > 0) {
-            float imgScale = 0.5f;
-            DrawTextureEx(mg.wordImages[i], (Vector2){ imgX + i * 200, imgY }, 0.0f, imgScale, WHITE);
+            DrawTextureEx(mg.wordImages[i], (Vector2){ startX + i * (imgW + gap), imgY }, 0.0f, imgScale, WHITE);
         }
     }
 
-    DrawText("Type the words: time, walk, bride (in order)", sw/2 - 300, sh-100, 20, WHITE);
-    DrawExitArrow(sw - 70, sh - 70, 40, WHITE);
-    DrawText("Exit", sw - 70, sh - 30, 15, WHITE);
+    DrawExitArrow(sw - 80, 40, 40, WHITE);
+    DrawText("Exit", sw - 75, 90, 16, WHITE);
 }
 
 static void DrawExitArrow(int x, int y, int size, Color color) {
