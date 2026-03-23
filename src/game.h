@@ -1,6 +1,6 @@
 /* game.h — Public interface for the game module.
    Defines the GameState enum, GameContext struct, and core lifecycle functions.
-   Code updated by 周沐格, at 07:34PM 2026/03/14 */
+   Code updated by Louis, at 11:20AM 2026/03/23 */
 
 #ifndef GAME_H
 #define GAME_H

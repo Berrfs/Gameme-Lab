@@ -1,6 +1,6 @@
 /* scene.c — Scene loading, cleanup, and lookup implementation.
    Parses scene data (dialogues + choices) from a JSON file using cJSON.
-   Code updated by 周沐格, at 08:21PM 2026/03/15 */
+   Code updated by Louis, at 11:20AM 2026/03/23 */
 
 #include "scene.h"
 #include "cJSON/cJSON.h"

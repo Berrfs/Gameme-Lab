@@ -2,7 +2,7 @@
    (入口文件。打开游戏窗口，运行主循环，然后关闭。)
    Kept intentionally minimal as all game logic lives in game.c and beyond.
    (保持简洁，所有游戏逻辑在 game.c 及其他模块中处理。)
-   Code updated by Louis, at 09:24PM 2026/03/18 */
+   Code updated by Louis, at 11:20AM 2026/03/23 */
 
 #include "raylib.h"
 #include "game.h"

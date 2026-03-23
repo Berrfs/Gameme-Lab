@@ -2,7 +2,7 @@
    (核心游戏逻辑：状态机、渲染和输入处理。)
    Manages title screen, name input, story playback, choices, and settings.
    (管理标题画面、姓名输入、剧情播放、选项和设置。)
-   Code updated by Louis, at 09:24PM 2026/03/18 */
+   Code updated by Louis, at 11:20AM 2026/03/23 */
 
 #include "game.h"
 #include "raylib.h"

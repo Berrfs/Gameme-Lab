@@ -1,6 +1,6 @@
 /* scene.h — Data structures and API for the scene / dialogue system.
    Scenes, dialogues, and branching choices are loaded from JSON at runtime.
-   Code updated by Louis, at 05:48PM 2026/03/13 */
+   Code updated by Louis, at 11:20AM 2026/03/23 */
 
 #ifndef SCENE_H
 #define SCENE_H

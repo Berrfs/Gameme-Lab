@@ -1,4 +1,5 @@
-// minigame.h
+/* minigame.h
+   Code updated by Louis, at 11:20AM 2026/03/23 */
 #ifndef MINIGAME_H
 #define MINIGAME_H
 
