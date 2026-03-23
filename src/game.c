@@ -674,38 +674,42 @@ static void DrawSettings(void) {
     float uiScale = GetUIScale();
     int sliderW = (int)(500 * uiScale);
     int leftX = (screenWidth - sliderW) / 2;
-    int baseY = (int)(80 * uiScale);
 
-    /* Title (标题) */
-    int titleW = MeasureText("Settings", (int)(48 * uiScale));
-    DrawText("Settings", (screenWidth - titleW) / 2, baseY, (int)(48 * uiScale), BLACK);
+    /* Calculate total content height and vertically center it */
+    int contentHeight = (int)(462 * uiScale);
+    int baseY = (screenHeight - contentHeight) / 2;
 
-    /* Master volume slider (主音量滑块) */
-    DrawText(TextFormat("Master Volume: %.0f%%", game.master_volume * 100), leftX, baseY + (int)(100 * uiScale), (int)(28 * uiScale), BLACK);
-    DrawRectangle(leftX, baseY + (int)(140 * uiScale), sliderW, (int)(30 * uiScale), LIGHTGRAY);
-    DrawRectangle(leftX, baseY + (int)(140 * uiScale), (int)(sliderW * game.master_volume), (int)(30 * uiScale), BLUE);
+    /* Title — centered horizontally */
+    int titleW = MeasureText("Settings", (int)(42 * uiScale));
+    DrawText("Settings", (screenWidth - titleW) / 2, baseY, (int)(42 * uiScale), BLACK);
 
-    /* Auto-mode on/off indicator (自动模式开关指示器) */
-    DrawText(TextFormat("Auto Mode: %s", game.auto_mode ? "ON" : "OFF"), leftX, baseY + (int)(210 * uiScale), (int)(28 * uiScale), BLACK);
-    DrawRectangle(leftX, baseY + (int)(250 * uiScale), sliderW, (int)(30 * uiScale), LIGHTGRAY);
-    DrawRectangle(leftX, baseY + (int)(250 * uiScale), (int)(sliderW * (game.auto_mode ? 1 : 0)), (int)(30 * uiScale), PURPLE);
-    DrawText("Press M to toggle Auto/Manual", leftX, baseY + (int)(290 * uiScale), (int)(22 * uiScale), BLACK);
+    /* Master volume slider */
+    DrawText(TextFormat("Master Volume: %.0f%%", game.master_volume * 100), leftX, baseY + (int)(70 * uiScale), (int)(26 * uiScale), BLACK);
+    DrawRectangle(leftX, baseY + (int)(105 * uiScale), sliderW, (int)(25 * uiScale), LIGHTGRAY);
+    DrawRectangle(leftX, baseY + (int)(105 * uiScale), (int)(sliderW * game.master_volume), (int)(25 * uiScale), BLUE);
 
-    /* Auto-advance interval slider (自动推进间隔滑块) */
-    DrawText(TextFormat("Auto Interval: %.1f s", game.auto_interval), leftX, baseY + (int)(350 * uiScale), (int)(28 * uiScale), BLACK);
-    DrawRectangle(leftX, baseY + (int)(390 * uiScale), sliderW, (int)(30 * uiScale), LIGHTGRAY);
-    DrawRectangle(leftX, baseY + (int)(390 * uiScale), (int)(sliderW * (game.auto_interval / 5.0f)), (int)(30 * uiScale), ORANGE);
-    DrawText("Up/Down: adjust interval (0.5~5.0s)", leftX, baseY + (int)(430 * uiScale), (int)(22 * uiScale), BLACK);
+    /* Auto-mode on/off indicator */
+    DrawText(TextFormat("Auto Mode: %s", game.auto_mode ? "ON" : "OFF"), leftX, baseY + (int)(155 * uiScale), (int)(26 * uiScale), BLACK);
+    DrawRectangle(leftX, baseY + (int)(190 * uiScale), sliderW, (int)(25 * uiScale), LIGHTGRAY);
+    DrawRectangle(leftX, baseY + (int)(190 * uiScale), (int)(sliderW * (game.auto_mode ? 1 : 0)), (int)(25 * uiScale), PURPLE);
+    DrawText("Press M to toggle Auto/Manual", leftX, baseY + (int)(222 * uiScale), (int)(20 * uiScale), BLACK);
 
-    /* Fullscreen toggle indicator (全屏切换指示器) */
-    DrawText(TextFormat("Fullscreen: %s", game.fullscreen ? "ON" : "OFF"), leftX, baseY + (int)(500 * uiScale), (int)(28 * uiScale), BLACK);
-    DrawRectangle(leftX, baseY + (int)(540 * uiScale), sliderW, (int)(30 * uiScale), LIGHTGRAY);
-    DrawRectangle(leftX, baseY + (int)(540 * uiScale), (int)(sliderW * (game.fullscreen ? 1 : 0)), (int)(30 * uiScale), GREEN);
-    DrawText("Press F to toggle Fullscreen", leftX, baseY + (int)(580 * uiScale), (int)(22 * uiScale), BLACK);
+    /* Auto-advance interval slider */
+    DrawText(TextFormat("Auto Interval: %.1f s", game.auto_interval), leftX, baseY + (int)(265 * uiScale), (int)(26 * uiScale), BLACK);
+    DrawRectangle(leftX, baseY + (int)(300 * uiScale), sliderW, (int)(25 * uiScale), LIGHTGRAY);
+    DrawRectangle(leftX, baseY + (int)(300 * uiScale), (int)(sliderW * (game.auto_interval / 5.0f)), (int)(25 * uiScale), ORANGE);
+    DrawText("Up/Down: adjust interval (0.5~5.0s)", leftX, baseY + (int)(332 * uiScale), (int)(20 * uiScale), BLACK);
 
-    /* Back button hint (返回按钮提示) */
-    int backW = MeasureText("Press B to go back", (int)(28 * uiScale));
-    DrawText("Press B to go back", (screenWidth - backW) / 2, screenHeight - (int)(60 * uiScale), (int)(28 * uiScale), DARKGRAY);
+    /* Fullscreen toggle indicator */
+    DrawText(TextFormat("Fullscreen: %s", game.fullscreen ? "ON" : "OFF"), leftX, baseY + (int)(375 * uiScale), (int)(26 * uiScale), BLACK);
+    DrawRectangle(leftX, baseY + (int)(410 * uiScale), sliderW, (int)(25 * uiScale), LIGHTGRAY);
+    DrawRectangle(leftX, baseY + (int)(410 * uiScale), (int)(sliderW * (game.fullscreen ? 1 : 0)), (int)(25 * uiScale), GREEN);
+    DrawText("Press F to toggle Fullscreen", leftX, baseY + (int)(442 * uiScale), (int)(20 * uiScale), BLACK);
+
+    /* "Press B to go back" — pinned at bottom center */
+    int backFontSize = (int)(26 * uiScale);
+    int backW = MeasureText("Press B to go back", backFontSize);
+    DrawText("Press B to go back", (screenWidth - backW) / 2, screenHeight - (int)(50 * uiScale), backFontSize, DARKGRAY);
 }
 
 /* Handle settings input: volume, auto-mode toggle, interval adjustment (处理设置输入：音量、自动模式切换、间隔调整) */
