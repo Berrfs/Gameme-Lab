@@ -126,7 +126,7 @@ void InitMinigame(void) {
         .name = "Picture",
         .texture = LoadTexture("UI/picture.png"),
         .wallIndex = 0,
-        .interactRect = { 600, 500, 80, 80 },
+        .interactRect = { 500, 250, 120, 120 },
         .isPickedUp = false,
         .visible = true
     };
@@ -137,7 +137,7 @@ void InitMinigame(void) {
         .name = "Typewriter",
         .texture = LoadTexture("UI/typewriter.png"),
         .wallIndex = 1,
-        .interactRect = { 700, 400, 70, 70 },
+        .interactRect = { 200, 350, 140, 120 },
         .isPickedUp = false,
         .visible = true
     };
@@ -148,7 +148,7 @@ void InitMinigame(void) {
         .name = "Script",
         .texture = LoadTexture("UI/script.png"),
         .wallIndex = 2,
-        .interactRect = { 500, 300, 100, 60 },
+        .interactRect = { 400, 200, 120, 100 },
         .isPickedUp = false,
         .visible = true
     };
@@ -158,8 +158,8 @@ void InitMinigame(void) {
         .id = 3,
         .name = "Door",
         .texture = LoadTexture("UI/door.png"),
-        .wallIndex = 1,          // 改为墙1
-        .interactRect = { 800, 200, 120, 200 },
+        .wallIndex = 1,
+        .interactRect = { 700, 100, 180, 300 },
         .isPickedUp = false,
         .visible = true
     };
@@ -170,7 +170,7 @@ void InitMinigame(void) {
         .name = "Key",
         .texture = LoadTexture("UI/key.png"),
         .wallIndex = 0,
-        .interactRect = { 600, 500, 40, 40 },  // 与画同位置
+        .interactRect = { 530, 400, 60, 60 },
         .isPickedUp = false,
         .visible = false
     };
@@ -181,7 +181,7 @@ void InitMinigame(void) {
         .name = "Nail",
         .texture = LoadTexture("UI/nail.png"),
         .wallIndex = 0,
-        .interactRect = { 600, 550, 30, 30 },  // 画下方一点
+        .interactRect = { 540, 380, 40, 40 },
         .isPickedUp = false,
         .visible = false
     };
@@ -192,7 +192,7 @@ void InitMinigame(void) {
         .name = "Hammer",
         .texture = LoadTexture("UI/hammer.png"),
         .wallIndex = 2,
-        .interactRect = { 300, 400, 60, 60 },
+        .interactRect = { 700, 300, 80, 80 },
         .isPickedUp = false,
         .visible = true
     };
@@ -251,10 +251,10 @@ void UpdateMinigame(void) {
         return;
     }
 
-    // ----- 1. 切换墙壁（左右箭头）-----
-    // 定义箭头点击区域（可根据屏幕大小调整）
-    Rectangle leftArrowRect  = { 20, sh/2 - 50, 80, 100 };
-    Rectangle rightArrowRect = { sw - 100, sh/2 - 50, 80, 100 };
+    // ----- 1. Switch walls (left/right arrows) -----
+    int arrowW = 60, arrowH = 80;
+    Rectangle leftArrowRect  = { 20, sh/2 - arrowH/2, arrowW, arrowH };
+    Rectangle rightArrowRect = { sw - arrowW - 20, sh/2 - arrowH/2, arrowW, arrowH };
 
     if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
         if (CheckCollisionPointRec(mouse, leftArrowRect)) {
@@ -297,18 +297,17 @@ void UpdateMinigame(void) {
         }
     }
 
-    // ----- 3. 工具栏点击（选择/取消选中）-----
-    int slotSize = 80;
-    int startX = 100;
-    int slotY = sh - 120;
+    // ----- 3. Inventory slot click (select/deselect) -----
+    int slotSize = 60;
+    int totalW = MAX_INVENTORY * slotSize + (MAX_INVENTORY - 1) * 10;
+    int startX = (sw - totalW) / 2;
+    int slotY = sh - slotSize - 15;
     for (int slot = 0; slot < MAX_INVENTORY; slot++) {
         Rectangle slotRect = { startX + slot * (slotSize + 10), slotY, slotSize, slotSize };
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, slotRect)) {
             if (mg.inventory[slot] != -1) {
-                // 如果点击的是同一个格子，取消选中；否则切换选中
                 mg.selectedSlot = (mg.selectedSlot == slot) ? -1 : slot;
             } else {
-                // 空格子点击取消选中
                 mg.selectedSlot = -1;
             }
         }
@@ -341,7 +340,7 @@ void DrawMinigame(void) {
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
 
-    // 1. 绘制当前墙的背景（全屏拉伸）
+    // 1. Draw current wall background (stretch to fill screen)
     DrawTexturePro(mg.wallTextures[mg.currentWall],
         (Rectangle){ 0, 0,
             (float)mg.wallTextures[mg.currentWall].width,
@@ -349,53 +348,59 @@ void DrawMinigame(void) {
         (Rectangle){ 0, 0, (float)sw, (float)sh },
         (Vector2){ 0, 0 }, 0.0f, WHITE);
 
-    // 2. 绘制左右箭头（简单纹理，位置可微调）
-    DrawTexture(mg.arrowLeft,  20, sh/2 - 50, WHITE);
-    DrawTexture(mg.arrowRight, sw - 100, sh/2 - 50, WHITE);
+    // 2. Draw left/right arrows (scaled to 60x80)
+    int arrowW = 60, arrowH = 80;
+    DrawTexturePro(mg.arrowLeft,
+        (Rectangle){ 0, 0, (float)mg.arrowLeft.width, (float)mg.arrowLeft.height },
+        (Rectangle){ 20, sh/2 - arrowH/2, arrowW, arrowH },
+        (Vector2){ 0, 0 }, 0.0f, WHITE);
+    DrawTexturePro(mg.arrowRight,
+        (Rectangle){ 0, 0, (float)mg.arrowRight.width, (float)mg.arrowRight.height },
+        (Rectangle){ sw - arrowW - 20, sh/2 - arrowH/2, arrowW, arrowH },
+        (Vector2){ 0, 0 }, 0.0f, WHITE);
 
-    // 3. 绘制当前墙上的物品（可见且未被拾取）
+    // 3. Draw items on current wall (scaled to fit their interactRect)
     for (int i = 0; i < mg.itemCount; i++) {
         Item* it = &mg.items[i];
         bool visibleOnWall = (it->wallIndex == mg.currentWall && it->visible && !it->isPickedUp);
-        // 画需要根据状态决定是否显示
         if (it->id == 0 && mg.pictureState != PICTURE_STATE_IN_FRAME) {
             visibleOnWall = false;
         }
         if (visibleOnWall) {
-            DrawTextureEx(it->texture,
-                (Vector2){ it->interactRect.x, it->interactRect.y },
-                0.0f, 1.0f, WHITE);
+            DrawTexturePro(it->texture,
+                (Rectangle){ 0, 0, (float)it->texture.width, (float)it->texture.height },
+                it->interactRect,
+                (Vector2){ 0, 0 }, 0.0f, WHITE);
         }
     }
 
-    // 4. 绘制底部工具栏
-    int slotSize = 80;
-    int startX = 100;
-    int slotY = sh - 120;
+    // 4. Draw bottom inventory bar
+    int slotSize = 60;
+    int totalW = MAX_INVENTORY * slotSize + (MAX_INVENTORY - 1) * 10;
+    int startX = (sw - totalW) / 2;
+    int slotY = sh - slotSize - 15;
     for (int slot = 0; slot < MAX_INVENTORY; slot++) {
         Rectangle slotRect = { startX + slot * (slotSize + 10), slotY, slotSize, slotSize };
 
-        // 绘制格子背景（如果有纹理，否则用纯色矩形）
+        // Draw slot background
         if (mg.inventorySlot.id > 0) {
             DrawTexturePro(mg.inventorySlot,
                 (Rectangle){ 0, 0,
                     (float)mg.inventorySlot.width,
                     (float)mg.inventorySlot.height },
-                (Rectangle){ slotRect.x, slotRect.y, slotRect.width, slotRect.height },
+                slotRect,
                 (Vector2){ 0, 0 }, 0.0f, WHITE);
         } else {
             DrawRectangleRec(slotRect, LIGHTGRAY);
             DrawRectangleLinesEx(slotRect, 2, DARKGRAY);
         }
 
-        // 如果格子有物品，绘制物品图标（按比例缩放到格子内）
+        // Draw item icon inside slot (scaled to fit)
         if (mg.inventory[slot] != -1) {
             int itemId = mg.inventory[slot];
-            // 假设物品ID与数组下标一致（实际应建立快速查找，这里简单遍历）
             for (int i = 0; i < mg.itemCount; i++) {
                 if (mg.items[i].id == itemId) {
                     Texture2D tex = mg.items[i].texture;
-                    // 缩放图标以适应格子，保留宽高比
                     float scale = fminf((slotSize - 10) / (float)tex.width,
                                         (slotSize - 10) / (float)tex.height);
                     int drawW = (int)(tex.width * scale);
@@ -408,21 +413,20 @@ void DrawMinigame(void) {
             }
         }
 
-        // 高亮选中的格子
+        // Highlight selected slot
         if (slot == mg.selectedSlot) {
             DrawRectangleLinesEx(slotRect, 4, YELLOW);
         }
     }
 
-    // 5. 绘制对话（如果激活）
+    // 5. Draw dialogue box (if active)
     if (mg.dialogue.active) {
-        int boxY = sh - 300;
-        int boxH = 200;
-        // 半透明黑底
+        int boxH = 150;
+        int boxY = sh - boxH - 90;
         DrawRectangle(0, boxY, sw, boxH, (Color){ 0, 0, 0, 200 });
-        DrawText(mg.dialogue.speaker, 50, boxY + 20, 40, MAROON);
-        DrawText(mg.dialogue.text, 50, boxY + 80, 36, WHITE);
-        DrawText("Click to continue", sw - 300, boxY + 150, 30, GRAY);
+        DrawText(mg.dialogue.speaker, 50, boxY + 15, 30, MAROON);
+        DrawText(mg.dialogue.text, 50, boxY + 55, 26, WHITE);
+        DrawText("Click to continue", sw - 280, boxY + boxH - 30, 22, GRAY);
     }
 }
 
