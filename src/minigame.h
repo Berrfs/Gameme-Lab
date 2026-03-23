@@ -6,7 +6,7 @@
 #include "raylib.h"
 
 #define MAX_INVENTORY 5      // 工具栏格子数
-#define MAX_ITEMS 6         // 场景中物品总数
+#define MAX_ITEMS 7         // Total items in scene (picture, typewriter, script, door, key, nail, hammer)
 #define WALL_COUNT 3         // 三面墙
 
 // 物品结构
