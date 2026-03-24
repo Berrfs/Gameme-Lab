@@ -5,49 +5,49 @@
 
 #include "raylib.h"
 
-#define MAX_INVENTORY 5      // 工具栏格子数
+#define MAX_INVENTORY 5      // Number of inventory slots
 #define MAX_ITEMS 7         // Total items in scene (picture, typewriter, script, door, key, nail, hammer)
-#define WALL_COUNT 3         // 三面墙
+#define WALL_COUNT 3         // Total number of walls
 
-// 物品结构
+// Item Structure
 typedef struct {
-    int id;                  // 物品唯一标识
-    const char* name;        // 物品名称（用于显示）
-    Texture2D texture;       // 物品图标（拾取后显示在工具栏）
-    int wallIndex;           // 物品出现在哪面墙（0,1,2）
-    Rectangle interactRect;  // 在该墙上的点击区域（相对屏幕坐标）
-    bool isPickedUp;         // 是否已被拾取
-    bool visible;            // 是否在当前墙可见（未被拾取且处于正确墙面）
+    int id;                  // Unique item identifier
+    const char* name;        // Item name (for display)
+    Texture2D texture;       // Item icon (displayed in inventory after pickup)
+    int wallIndex;           // Which wall the item appears on (0, 1, 2)
+    Rectangle interactRect;  // Clickable area on that wall (relative to screen coords)
+    bool isPickedUp;         // Has the item been picked up?
+    bool visible;            // Is it currently visible on the wall?
 } Item;
 
-// 对话行（小游戏内简单对话）
+// Dialogue Line (simple dialogue within the minigame)
 typedef struct {
     const char* speaker;
     const char* text;
 } MiniDialogue;
 
-// 小游戏主上下文（外部不可直接访问，内部由 minigame.c 维护）
+// Main Minigame Context (internal to minigame.c)
 typedef struct MinigameContext {
-    int currentWall;                     // 当前墙面索引 0~2
-    Texture2D wallTextures[WALL_COUNT];  // 三面墙的背景图
-    Texture2D arrowLeft, arrowRight;     // 左右箭头纹理
-    Texture2D inventorySlot;              // 工具栏格子背景（可选）
+    int currentWall;                     // Current wall index 0~2
+    Texture2D wallTextures[WALL_COUNT];  // Background textures for the 3 walls
+    Texture2D arrowLeft, arrowRight;     // Left/Right arrow textures
+    Texture2D inventorySlot;              // Inventory slot background texture
     
-    Item items[MAX_ITEMS];               // 所有物品定义
+    Item items[MAX_ITEMS];               // Definitions for all items
     int itemCount;
     
-    int inventory[MAX_INVENTORY];         // 当前持有的物品ID，-1表示空
-    int selectedSlot;                     // 当前选中的格子索引，-1表示无
+    int inventory[MAX_INVENTORY];         // Currently held item IDs, -1 means empty
+    int selectedSlot;                     // Currently selected inventory slot index, -1 means none
     
-    // 对话相关
+    // Dialogue related variables
     MiniDialogue currentDialogue;
     bool showDialogue;
-    float dialogueTimer;                   // 用于自动隐藏，或手动点击关闭
+    float dialogueTimer;                   // Timer for auto-hide, or manual click to close
     
-    // 其他状态……
+    // Additional states...
 } MinigameContext;
 
-// 全局小游戏上下文（由 minigame.c 自己维护，game.c 不直接访问内部）
+// Global Minigame Context Functions (Managed by minigame.c, not accessed directly by game.c)
 void InitMinigame(void);
 void UpdateMinigame(void);
 void DrawMinigame(void);
