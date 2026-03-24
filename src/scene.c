@@ -1,6 +1,6 @@
 /* scene.c — Scene loading, cleanup, and lookup implementation.
    Parses scene data (dialogues + choices) from a JSON file using cJSON.
-   Code updated by Louis, at 11:20AM 2026/03/23 */
+   Code updated by 周沐格, at 08:21PM 2026/03/15 */
 
 #include "scene.h"
 #include "cJSON/cJSON.h"
@@ -54,6 +54,10 @@ void LoadScenesFromJSON(const char *filename) {
         cJSON *bg_json = cJSON_GetObjectItem(scene_item, "background");
         sc->background = bg_json ? strdup(bg_json->valuestring) : NULL;
 
+        /* 【新增】：解析无选项时的下一个场景 (next_scene) */
+        cJSON *next_scene_json = cJSON_GetObjectItem(scene_item, "next_scene");
+        sc->next_scene_id = next_scene_json ? strdup(next_scene_json->valuestring) : NULL;
+
         /* Parse the dialogues array for this scene */
         cJSON *dialogs_array = cJSON_GetObjectItem(scene_item, "dialogues");
         sc->dialogue_count = cJSON_GetArraySize(dialogs_array);
@@ -93,6 +97,7 @@ void UnloadScenes(void) {
         Scene *sc = &g_scenes[i];
         free(sc->id);
         free(sc->background);
+        free(sc->next_scene_id); /* 【新增】：释放 next_scene_id 占用的内存 */
 
         /* Free every dialogue's strings, then the dialogues array itself */
         for (int j = 0; j < sc->dialogue_count; j++) {
@@ -116,7 +121,7 @@ void UnloadScenes(void) {
 /* Linear search for a scene by its string ID. Returns NULL if not found */
 Scene* GetSceneByID(const char *id) {
     for (int i = 0; i < g_scene_count; i++) {
-        if (strcmp(g_scenes[i].id, id) == 0)
+        if (g_scenes[i].id != NULL && strcmp(g_scenes[i].id, id) == 0)
             return &g_scenes[i];
     }
     return NULL;
