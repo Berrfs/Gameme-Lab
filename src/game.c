@@ -2,11 +2,12 @@
    (核心游戏逻辑：状态机、渲染和输入处理。)
    Manages title screen, name input, story playback, choices, and settings.
    (管理标题画面、姓名输入、剧情播放、选项和设置。)
-   Code updated by Louis, at 11:20AM 2026/03/23 */
+   Code updated by 周沐格, at 10:24PM 2026/03/24 */
 
 #include "game.h"
 #include "raylib.h"
 #include "minigame.h"
+#include "minigame2.h"
 #include "cJSON/cJSON.h"
 #include <stdio.h>
 #include <string.h>   /* For strcpy, strcmp, strlen (用于 strcpy、strcmp、strlen) */
@@ -110,6 +111,7 @@ void UpdateGame(void) {
         case STATE_CHOICE:      HandleChoiceInput(); break;
         case STATE_SETTINGS:    HandleSettingsInput(); break;
         case STATE_MINIGAME:    UpdateMinigame(); break; // Added: minigame state (新增：小游戏状态)
+        case STATE_MINIGAME2:   UpdateMinigame2(); break;
     }
 }
 
@@ -125,6 +127,7 @@ void DrawGame(void) {
         case STATE_CHOICE:      DrawChoice(); break;
         case STATE_SETTINGS:    DrawSettings(); break;
         case STATE_MINIGAME:    DrawMinigame(); break; // Added: minigame state (新增：小游戏状态)
+        case STATE_MINIGAME2:   DrawMinigame2(); break;
     }
 
     EndDrawing();
@@ -148,6 +151,7 @@ void UnloadGame(void) {
 
     // Ensure minigame resources are released (确保小游戏资源被释放)
     UnloadMinigame();   // Declared in minigame.h (声明在 minigame.h 中)
+    UnloadMinigame2();
 }
 
 /* ==================== Title Screen Drawing (标题画面绘制) ==================== */
@@ -511,12 +515,34 @@ static void UpdatePlaying(void) {
                 if (sc->choice_count > 0) {
                     game.state = STATE_CHOICE;
                 } else {
-                    // Added: if specific scene, enter minigame (新增：如果是特定场景，进入小游戏)
-                    if (strcmp(sc->id, "scene2") == 0) {
-                        UnloadMinigame();      // Clean up old resources, safe even if uninitialized (清理旧资源，即使未初始化也安全)
-                        InitMinigame();          // Initialize minigame resources (初始化小游戏资源)
-                        game.state = STATE_MINIGAME;
-                    } else {
+                    // 检查是否配置了下一场景的ID（注意这里判空用 != NULL）
+                    if (sc->next_scene_id != NULL) {
+                        
+                        // 特殊情况：进入小游戏
+                        if (strcmp(sc->next_scene_id, "MINIGAME") == 0) {
+                            UnloadMinigame();
+                            InitMinigame();
+                            game.state = STATE_MINIGAME;
+                        } 
+                        else if (strcmp(sc->next_scene_id, "MINIGAME2") == 0) {
+                            UnloadMinigame2();
+                            InitMinigame2();
+                            game.state = STATE_MINIGAME2;
+                        }
+                        // 正常情况：跳往下一个场景
+                        else {
+                            Scene *next = GetSceneByID(sc->next_scene_id);
+                            if (next) {
+                                game.current_scene = next;
+                                game.dialogue_index = 0;
+                                game.auto_timer = 0.0f;
+                            } else {
+                                game.state = STATE_TITLE;
+                            }
+                        }
+                    } 
+                    // 如果什么都没配置，退回标题 (比如最终结局)
+                    else {
                         game.state = STATE_TITLE;
                     }
                 }
@@ -530,12 +556,34 @@ static void UpdatePlaying(void) {
                 if (sc->choice_count > 0) {
                     game.state = STATE_CHOICE;
                 } else {
-                    // Added: if specific scene, enter minigame (新增：如果是特定场景，进入小游戏)
-                    if (strcmp(sc->id, "scene2") == 0) {
-                        UnloadMinigame();      // Clean up old resources, safe even if uninitialized (清理旧资源，即使未初始化也安全)
-                        InitMinigame();          // Initialize minigame resources (初始化小游戏资源)
-                        game.state = STATE_MINIGAME;
-                    } else {
+                    // 检查是否配置了下一场景的ID（注意这里判空用 != NULL）
+                    if (sc->next_scene_id != NULL) {
+                        
+                        // 特殊情况：进入小游戏
+                        if (strcmp(sc->next_scene_id, "MINIGAME") == 0) {
+                            UnloadMinigame();
+                            InitMinigame();
+                            game.state = STATE_MINIGAME;
+                        } 
+                        else if (strcmp(sc->next_scene_id, "MINIGAME2") == 0) {
+                            UnloadMinigame2();
+                            InitMinigame2();
+                            game.state = STATE_MINIGAME2;
+                        }
+                        // 正常情况：跳往下一个场景
+                        else {
+                            Scene *next = GetSceneByID(sc->next_scene_id);
+                            if (next) {
+                                game.current_scene = next;
+                                game.dialogue_index = 0;
+                                game.auto_timer = 0.0f;
+                            } else {
+                                game.state = STATE_TITLE;
+                            }
+                        }
+                    } 
+                    // 如果什么都没配置，退回标题 (比如最终结局)
+                    else {
                         game.state = STATE_TITLE;
                     }
                 }
