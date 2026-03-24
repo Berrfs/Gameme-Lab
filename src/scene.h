@@ -1,6 +1,6 @@
 /* scene.h — Data structures and API for the scene / dialogue system.
    Scenes, dialogues, and branching choices are loaded from JSON at runtime.
-   Code updated by Louis, at 11:20AM 2026/03/23 */
+   Code updated by 周沐格, at 11:25AM 2026/03/24 */
 
 #ifndef SCENE_H
 #define SCENE_H
@@ -28,6 +28,7 @@ typedef struct Scene {
     int dialogue_count;     /* Number of dialogue entries */
     Choice *choices;        /* Array of branching choices */
     int choice_count;       /* Number of choice entries */
+    char *next_scene_id;    /* 【新增】无选项时的默认下一个场景ID */
 } Scene;
 
 /* Global scene list — populated by LoadScenesFromJSON() */
