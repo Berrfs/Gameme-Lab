@@ -21,7 +21,8 @@
                 {"speaker": "???", "text": "In short,you can't play."},
                 {"speaker": "Player", "text": "I don't believe it."}
             ],
-            "choices": []
+            "choices": [],
+            "next_scene": "MINIGAME"
         }
     ]
 }
