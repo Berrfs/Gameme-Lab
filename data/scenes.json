@@ -21,7 +21,32 @@
                 {"speaker": "???", "text": "In short,you can't play."},
                 {"speaker": "Player", "text": "I don't believe it."}
             ],
-            "choices": []
+            "choices": [],
+            "next_scene": "MINIGAME"  
+        },
+        {
+            "id": "scene3",
+            "background": "background_image (2).png",
+            "dialogues": [
+                {"speaker": "???", "text": "What are you doing!"},
+                {"speaker": "???", "text": "Lock my door back!"}
+            ],
+            "choices": [],
+            "next_scene": "scene4"
+        },
+        {
+            "id": "scene4",
+            "background": "collapse.jpg",
+            "dialogues": [],
+            "choices": [],
+            "next_scene": "MINIGAME2"
+        },
+        {
+            "id": "scene5",
+            "background": "collapse.jpg",
+            "dialogues": [],
+            "choices": [],
+            "next_scene": "scene6"
         }
     ]
 }
