@@ -10,7 +10,7 @@
 #include "minigame.h"  
 #include <string.h>  /* For string operations (strcpy, strcmp, strlen) */
 
-/* Base resolution for UI scaling (UI缩放的基础分辨率) */
+/* Base resolution for UI scaling */
 #define BASE_SCREEN_WIDTH 1280
 #define BASE_SCREEN_HEIGHT 720
 
@@ -21,8 +21,8 @@ typedef enum GameState {
     STATE_PLAYING,     /* Story dialogue playback */
     STATE_CHOICE,      /* Branching choice overlay */
     STATE_SETTINGS,     /* Settings / options menu */
-    STATE_MINIGAME,      // 新增
-    STATE_MINIGAME2   /* 【新增】小游戏2状态 */
+    STATE_MINIGAME,      /* Minigame 1 mode */
+    STATE_MINIGAME2      /* Minigame 2 mode */
 } GameState;
 
 /* Master struct that holds the entire runtime state of the game */
@@ -40,10 +40,10 @@ typedef struct GameContext {
     float auto_interval;    /* Seconds between auto-advance steps */
     float auto_timer;       /* Accumulator for auto-advance timing */
 
-    /* Window settings (窗口设置) */
+    /* Window settings */
     bool fullscreen;        /* true = fullscreen, false = windowed */
-    int window_width;       /* Window width in windowed mode (窗口模式下的宽度) */
-    int window_height;      /* Window height in windowed mode (窗口模式下的高度) */
+    int window_width;       /* Window width in windowed mode */
+    int window_height;      /* Window height in windowed mode */
 
     /* Title screen UI textures */
     Texture2D titleBackground;
@@ -52,19 +52,19 @@ typedef struct GameContext {
     Texture2D btnStart;
     Texture2D btnMenu;
     Texture2D btnExit;
-    Texture2D forestBackground;   // 森林背景
-    Texture2D computerImage;      // 电脑图片
+    Texture2D forestBackground;   /* Forest background */
+    Texture2D computerImage;      /* Computer image */
 
-    /* 当前场景的背景纹理 */
+    /* Background texture of the current scene */
     Texture2D currentBackground;
-    /* 当前说话者的立绘纹理 */
+    /* Portrait texture of the current speaker */
     Texture2D currentPortrait;
-    /* 记录已加载的背景文件名，用于判断是否需要重新加载 */
+    /* Record of the loaded background file path to prevent redundant loading */
     char currentBackgroundPath[256];
-    /* 记录已加载的立绘对应的说话者，用于判断是否需要重新加载 */
+    /* Record of the loaded portrait speaker name to prevent redundant loading */
     char currentSpeaker[64];
 
-    struct MinigameContext* minigame;   // 指向小游戏内部状态的指针
+    struct MinigameContext* minigame;   /* Pointer to internal minigame state */
 } GameContext;
 
 /* Global game context — single instance shared across modules */
