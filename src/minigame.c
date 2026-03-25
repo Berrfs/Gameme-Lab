@@ -517,6 +517,18 @@ static void ExitToStory(const char* sceneId) {
         game.dialogue_index = 0;
         game.state = STATE_PLAYING;    
         game.auto_timer = 0.0f;
+
+        // Clear stale background/portrait to prevent 1-frame flash of old scene
+        if (game.currentBackground.id != 0) {
+            UnloadTexture(game.currentBackground);
+            game.currentBackground = (Texture2D){0};
+        }
+        game.currentBackgroundPath[0] = '\0';
+        if (game.currentPortrait.id != 0) {
+            UnloadTexture(game.currentPortrait);
+            game.currentPortrait = (Texture2D){0};
+        }
+        game.currentSpeaker[0] = '\0';
     } else {
         TraceLog(LOG_ERROR, "Minigame: Scene %s NOT FOUND! Returning to title.", targetScene);
         game.state = STATE_TITLE;
