@@ -28,7 +28,7 @@ typedef struct Scene {
     int dialogue_count;     /* Number of dialogue entries */
     Choice *choices;        /* Array of branching choices */
     int choice_count;       /* Number of choice entries */
-    char *next_scene_id;    /* 【新增】无选项时的默认下一个场景ID */
+    char *next_scene_id;    /* Default next scene ID when no choices exist */
 } Scene;
 
 /* Global scene list — populated by LoadScenesFromJSON() */
