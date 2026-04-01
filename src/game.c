@@ -2,12 +2,14 @@
    (核心游戏逻辑：状态机、渲染和输入处理。)
    Manages title screen, name input, story playback, choices, and settings.
    (管理标题画面、姓名输入、剧情播放、选项和设置。)
-   Code updated by 周沐格, at 10:24PM 2026/03/24 */
+   Code updated by 周沐格, at 10:30AM 2026/04/01 */
 
 #include "game.h"
 #include "raylib.h"
 #include "minigame.h"
 #include "minigame2.h"
+#include "warehouse.h"
+#include "minigame3.h"   // 【新增】
 #include "cJSON/cJSON.h"
 #include <stdio.h>
 #include <string.h>   /* For strcpy, strcmp, strlen (用于 strcpy、strcmp、strlen) */
@@ -112,6 +114,8 @@ void UpdateGame(void) {
         case STATE_SETTINGS:    HandleSettingsInput(); break;
         case STATE_MINIGAME:    UpdateMinigame(); break; // Added: minigame state (新增：小游戏状态)
         case STATE_MINIGAME2:   UpdateMinigame2(); break;
+        case STATE_WAREHOUSE:   UpdateWarehouse(); break;
+        case STATE_MINIGAME3:   UpdateMinigame3(); break;
     }
 }
 
@@ -128,6 +132,8 @@ void DrawGame(void) {
         case STATE_SETTINGS:    DrawSettings(); break;
         case STATE_MINIGAME:    DrawMinigame(); break; // Added: minigame state (新增：小游戏状态)
         case STATE_MINIGAME2:   DrawMinigame2(); break;
+        case STATE_WAREHOUSE:   DrawWarehouse(); break;
+        case STATE_MINIGAME3:   DrawMinigame3(); break;
     }
 
     EndDrawing();
@@ -152,6 +158,8 @@ void UnloadGame(void) {
     // Ensure minigame resources are released (确保小游戏资源被释放)
     UnloadMinigame();   // Declared in minigame.h (声明在 minigame.h 中)
     UnloadMinigame2();
+    UnloadWarehouse();
+    UnloadMinigame3();
 }
 
 /* ==================== Title Screen Drawing (标题画面绘制) ==================== */
@@ -426,10 +434,10 @@ static void DrawPlaying(void) {
         }
         DrawText(speaker, (int)(40 * uiScale), dialogBoxY + (int)(12 * uiScale), (int)(28 * uiScale), MAROON);
         DrawText(d->text, (int)(40 * uiScale), dialogBoxY + (int)(50 * uiScale), (int)(26 * uiScale), WHITE);
-    } else {
+    } /*else {
         int msgWidth = MeasureText("End of scene. Press ESC to title.", (int)(30 * uiScale));
         DrawText("End of scene. Press ESC to title.", (screenWidth - msgWidth) / 2, screenHeight / 2, (int)(30 * uiScale), BLACK);
-    }
+    }*/
 
     /* Show current mode, auto or manual (显示当前模式，自动或手动) */
     DrawText(TextFormat("Mode: %s", game.auto_mode ? "AUTO" : "MANUAL"), (int)(15 * uiScale), (int)(10 * uiScale), (int)(20 * uiScale), BLACK);
@@ -529,6 +537,11 @@ static void UpdatePlaying(void) {
                             InitMinigame2();
                             game.state = STATE_MINIGAME2;
                         }
+                        else if (strcmp(sc->next_scene_id, "WAREHOUSE") == 0) {
+                            UnloadWarehouse(); // 确保旧数据被清理
+                            InitWarehouse();
+                            game.state = STATE_WAREHOUSE;
+                        }
                         // 正常情况：跳往下一个场景
                         else {
                             Scene *next = GetSceneByID(sc->next_scene_id);
@@ -569,6 +582,11 @@ static void UpdatePlaying(void) {
                             UnloadMinigame2();
                             InitMinigame2();
                             game.state = STATE_MINIGAME2;
+                        }
+                        else if (strcmp(sc->next_scene_id, "WAREHOUSE") == 0) {
+                            UnloadWarehouse(); // 确保旧数据被清理
+                            InitWarehouse();
+                            game.state = STATE_WAREHOUSE;
                         }
                         // 正常情况：跳往下一个场景
                         else {
