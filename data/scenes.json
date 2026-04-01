@@ -22,7 +22,7 @@
                 {"speaker": "Player", "text": "I don't believe it."}
             ],
             "choices": [],
-            "next_scene": "MINIGAME"
+            "next_scene": "MINIGAME"  
         },
         {
             "id": "scene3",
@@ -47,6 +47,28 @@
             "dialogues": [],
             "choices": [],
             "next_scene": "scene6"
+        },
+        {
+            "id": "ending1",
+            "background": "collapse.jpg",
+            "dialogues": [
+                {"speaker": "System", "text": "ENDING 1: Expelled from the Game. You were swallowed by the void."}
+            ]
+        },
+        {
+            "id": "scene6",
+            "background": "collapse.jpg",
+            "dialogues": [],
+            "choices": [],
+            "next_scene": "WAREHOUSE"
+        },
+        {
+            "id": "scene7",
+            "background": "computer.jpg",
+            "dialogues": [
+                {"speaker": "Player", "text": "We escaped the warehouse..."}
+            ],
+            "choices": []
         }
     ]
 }

@@ -11,11 +11,11 @@ extern GameContext game;
 // 最大连续对话行数
 #define MAX_DIALOGUE_LINES 10
 
-// --- 新增：工具栏常量与物品ID ---
+// 工具栏常量与物品ID
 #define MG2_MAX_INVENTORY 5
 #define ITEM_BUCKET_EMPTY 1
 #define ITEM_BUCKET_WATER 2
-#define ITEM_GRASS 3
+#define ITEM_SAPLING 3      // 将草叶改为树苗
 
 // 游戏阶段状态机
 typedef enum {
@@ -41,15 +41,14 @@ static struct {
     Texture2D treeTex;
     Texture2D holeTex;
 
-    // --- 新增：工具栏与物品贴图 ---
+    // 工具栏与物品贴图
     Texture2D inventorySlotTex;
     Texture2D itemBucketEmptyTex;
     Texture2D itemBucketWaterTex;
-    Texture2D itemGrassTex;
+    Texture2D itemSaplingTex; // 树苗贴图
 
     int inventory[MG2_MAX_INVENTORY]; // 工具栏数组
     int selectedSlot;                 // 当前选中的格子
-    // ----------------------------
 
     // 玩家数据
     Vector2 playerPos;
@@ -62,13 +61,14 @@ static struct {
     // 交互区域
     Vector2 rabbitPos;
     bool rabbitActive;
-    bool grassBladeDropped;
+    bool saplingDropped; // 兔子是否掉落了树苗
 
     Vector2 grassPatchPos;
     bool isSoil;
-    bool hasTree;
+    bool isSaplingPlanted; // 是否已经种下树苗
+    bool hasTree;          // 是否长成大树
 
-    Rectangle riverRect;
+    Rectangle riverRects[3];
 
     // 状态与UI
     MG2State state;
@@ -92,7 +92,7 @@ static void ShowDialog(const char* speaker, const char* text);
 static void ShowNotification(const char* text);
 static float GetDistance(Vector2 p1, Vector2 p2);
 static void ExitMinigame2(const char* nextScene);
-static void AddToInventory(int itemId); // 新增：添加物品到工具栏
+static void AddToInventory(int itemId); 
 
 void InitMinigame2(void) {
     // 加载资源
@@ -101,11 +101,11 @@ void InitMinigame2(void) {
     mg2.treeTex = LoadTexture("UI/tree.png");
     mg2.holeTex = LoadTexture("UI/blackhole.png");
 
-    // 加载工具栏与物品资源 (请确保路径存在，若没有图片可用，代码已做兜底纯色矩形处理)
+    // 加载工具栏与物品资源
     mg2.inventorySlotTex = LoadTexture("UI/slot.png");
     mg2.itemBucketEmptyTex = LoadTexture("UI/bucket_empty.png");
     mg2.itemBucketWaterTex = LoadTexture("UI/bucket_water.png");
-    mg2.itemGrassTex = LoadTexture("UI/grass_blade.png");
+    mg2.itemSaplingTex = LoadTexture("UI/sapling.png");
 
     // 初始化工具栏
     for (int i = 0; i < MG2_MAX_INVENTORY; i++) mg2.inventory[i] = -1;
@@ -123,13 +123,19 @@ void InitMinigame2(void) {
     int sw = GetScreenWidth(), sh = GetScreenHeight();
     mg2.rabbitPos = (Vector2){ sw * 0.2f, sh * 0.3f };
     mg2.rabbitActive = true;
-    mg2.grassBladeDropped = false;
+    mg2.saplingDropped = false;
 
     mg2.grassPatchPos = (Vector2){ sw * 0.4f, sh * 0.6f };
     mg2.isSoil = false;
+    mg2.isSaplingPlanted = false;
     mg2.hasTree = false;
 
-    mg2.riverRect = (Rectangle){ sw * 0.7f, 0, sw * 0.3f, (float)sh };
+    // 1. 右上角纵向段
+    mg2.riverRects[0] = (Rectangle){ sw * 0.75f, 0, sw * 0.25f, sh * 0.4f };
+    // 2. 中间斜向过渡段
+    mg2.riverRects[1] = (Rectangle){ sw * 0.65f, sh * 0.35f, sw * 0.2f, sh * 0.4f };
+    // 3. 左下角横向/斜向段
+    mg2.riverRects[2] = (Rectangle){ sw * 0.4f, sh * 0.7f, sw * 0.35f, sh * 0.3f };
     
     mg2.state = MG2_INTRO;
     mg2.showDialogue = false;
@@ -163,7 +169,6 @@ void UpdateMinigame2(void) {
 
                 if (finishedState == MG2_INTRO) {
                     mg2.state = MG2_PLAYING;
-                    // --- 修改：使用工具栏机制给予水桶 ---
                     AddToInventory(ITEM_BUCKET_EMPTY);
                     ShowNotification("Obtained: Iron Bucket x1");
                 } else if (finishedState == MG2_BOSS_ANGRY) {
@@ -182,9 +187,11 @@ void UpdateMinigame2(void) {
         Rectangle btnRect = { sw/2.0f - 100, sh/2.0f + 100, 200, 60 };
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && CheckCollisionPointRec(mouse, btnRect)) {
             ExitMinigame2("scene5");
+            return;
         }
         if (mg2.qteTimer <= 0) {
             ExitMinigame2("ending1");
+            return;
         }
         return;
     }
@@ -222,20 +229,18 @@ void UpdateMinigame2(void) {
             mg2.currentFrame = 0;
         }
 
-        // --- 新增：工具栏点击逻辑 ---
+        // --- 工具栏点击逻辑 ---
         bool clickedUI = false;
         int slotSize = 80;
         int startX = 100;
         int slotY = sh - 120;
         
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
-            // 检查是否点击了底部工具栏
             for (int slot = 0; slot < MG2_MAX_INVENTORY; slot++) {
                 Rectangle slotRect = { startX + slot * (slotSize + 10), slotY, slotSize, slotSize };
                 if (CheckCollisionPointRec(mouse, slotRect)) {
                     clickedUI = true;
                     if (mg2.inventory[slot] != -1) {
-                        // 切换选中状态
                         mg2.selectedSlot = (mg2.selectedSlot == slot) ? -1 : slot;
                     } else {
                         mg2.selectedSlot = -1;
@@ -245,57 +250,76 @@ void UpdateMinigame2(void) {
             }
         }
 
-        // --- 修改：场景交互逻辑 (结合工具栏选中状态) ---
+        // --- 场景交互逻辑 ---
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON) && !clickedUI) {
             float interactRange = 150.0f;
 
-            // 1. 兔子交互 (不需要拿物品)
+            // 1. 兔子交互 -> 掉落树苗
             if (GetDistance(mg2.playerPos, mg2.rabbitPos) < interactRange) {
                 if (mg2.rabbitActive) {
                     mg2.rabbitActive = false;
-                    mg2.grassBladeDropped = true;
-                    ShowNotification("The rabbit hopped away and left a blade of grass.");
-                } else if (mg2.grassBladeDropped) {
-                    mg2.grassBladeDropped = false;
-                    AddToInventory(ITEM_GRASS); // 放入背包
-                    ShowNotification("Obtained: Blade of Grass");
+                    mg2.saplingDropped = true;
+                    ShowNotification("The rabbit hopped away and left a sapling.");
+                } else if (mg2.saplingDropped) {
+                    mg2.saplingDropped = false;
+                    AddToInventory(ITEM_SAPLING); // 放入背包
+                    ShowNotification("Obtained: Sapling x1");
                 }
             }
 
-            // 2. 草地与种树
+            // 2. 土地 / 种树 / 浇水
             if (GetDistance(mg2.playerPos, mg2.grassPatchPos) < interactRange) {
                 if (!mg2.isSoil) {
+                    // 步骤A: 拔草变土地
                     mg2.isSoil = true;
                     ShowNotification("Grass removed. It turned into tilled soil.");
-                } else if (mg2.isSoil && !mg2.hasTree) {
-                    // 检查是否选中了【装满水的水桶】
+                } else if (mg2.isSoil && !mg2.isSaplingPlanted && !mg2.hasTree) {
+                    // 步骤B: 种下树苗
+                    if (mg2.selectedSlot != -1 && mg2.inventory[mg2.selectedSlot] == ITEM_SAPLING) {
+                        mg2.isSaplingPlanted = true;
+                        // 从工具栏移除树苗
+                        mg2.inventory[mg2.selectedSlot] = -1; 
+                        mg2.selectedSlot = -1;
+                        ShowNotification("You planted the sapling. Now it needs water.");
+                    } else {
+                        ShowNotification("The soil is empty. You need something to plant.");
+                    }
+                } else if (mg2.isSaplingPlanted && !mg2.hasTree) {
+                    // 步骤C: 浇水长大
                     if (mg2.selectedSlot != -1 && mg2.inventory[mg2.selectedSlot] == ITEM_BUCKET_WATER) {
                         mg2.hasTree = true;
-                        // 水用完了，水桶变回空水桶
+                        // 水用完，变回空桶
                         mg2.inventory[mg2.selectedSlot] = ITEM_BUCKET_EMPTY; 
-                        mg2.selectedSlot = -1; // 取消选中
+                        mg2.selectedSlot = -1; 
                         
                         mg2.state = MG2_GROWING;
                         mg2.shakeTimer = 2.0f;
                         ShowNotification("You poured water. A massive tree is growing!");
                     } else {
-                        ShowNotification("The soil looks dry. It needs water.");
+                        ShowNotification("The sapling looks dry. It needs water.");
                     }
                 }
             }
 
             // 3. 河边打水
-            if (CheckCollisionPointRec(mg2.playerPos, mg2.riverRect)) {
-                // 检查是否选中了【空水桶】
+            bool isInRiver = false;
+            for (int i = 0; i < 3; i++) {
+                if (CheckCollisionPointRec(mg2.playerPos, mg2.riverRects[i])) {
+                    isInRiver = true;
+                    break;
+                }
+            }
+
+            if (isInRiver) {
                 if (mg2.selectedSlot != -1 && mg2.inventory[mg2.selectedSlot] == ITEM_BUCKET_EMPTY) {
-                    mg2.inventory[mg2.selectedSlot] = ITEM_BUCKET_WATER; // 变成装满水的水桶
-                    mg2.selectedSlot = -1; // 取消选中
+                    mg2.inventory[mg2.selectedSlot] = ITEM_BUCKET_WATER; 
+                    mg2.selectedSlot = -1; 
                     ShowNotification("Bucket filled with water.");
                 }
             }
-        }
-    }
-}
+                    }
+                }
+            }
 
 void DrawMinigame2(void) {
     int sw = GetScreenWidth(), sh = GetScreenHeight();
@@ -306,32 +330,55 @@ void DrawMinigame2(void) {
         offsetY = GetRandomValue(-10, 10);
     }
 
+    // 背景
     DrawTexturePro(mg2.bgMap, 
         (Rectangle){0, 0, (float)mg2.bgMap.width, (float)mg2.bgMap.height}, 
         (Rectangle){offsetX, offsetY, (float)sw, (float)sh}, 
         (Vector2){0,0}, 0.0f, WHITE);
 
+    // 兔子或掉落的树苗
     if (mg2.rabbitActive) {
         DrawCircleV((Vector2){mg2.rabbitPos.x + offsetX, mg2.rabbitPos.y + offsetY}, 20, PINK);
         DrawText("Rabbit", mg2.rabbitPos.x - 20 + offsetX, mg2.rabbitPos.y - 40 + offsetY, 20, BLACK);
-    } else if (mg2.grassBladeDropped) {
-        DrawCircleV((Vector2){mg2.rabbitPos.x + offsetX, mg2.rabbitPos.y + offsetY}, 10, GREEN);
+    } else if (mg2.saplingDropped) {
+        // 画一个绿色小倒三角代表掉落的树苗（如果没有贴图）
+        if (mg2.itemSaplingTex.id > 0) {
+            DrawTexture(mg2.itemSaplingTex, mg2.rabbitPos.x - mg2.itemSaplingTex.width/2 + offsetX, mg2.rabbitPos.y - mg2.itemSaplingTex.height/2 + offsetY, WHITE);
+        } else {
+            DrawTriangle((Vector2){mg2.rabbitPos.x + offsetX, mg2.rabbitPos.y - 15 + offsetY},
+                         (Vector2){mg2.rabbitPos.x - 10 + offsetX, mg2.rabbitPos.y + 10 + offsetY},
+                         (Vector2){mg2.rabbitPos.x + 10 + offsetX, mg2.rabbitPos.y + 10 + offsetY}, LIME);
+        }
     }
 
+    // 土地状态绘制
     if (!mg2.isSoil) {
+        // 未开垦的草地
         DrawRectangle(mg2.grassPatchPos.x - 30 + offsetX, mg2.grassPatchPos.y - 30 + offsetY, 60, 60, DARKGREEN);
     } else {
+        // 翻好的泥土
         DrawRectangle(mg2.grassPatchPos.x - 30 + offsetX, mg2.grassPatchPos.y - 30 + offsetY, 60, 60, BROWN);
+        
         if (mg2.hasTree) {
+            // 长成的大树
             if (mg2.treeTex.id > 0) {
                 DrawTexture(mg2.treeTex, mg2.grassPatchPos.x - mg2.treeTex.width/2 + offsetX, mg2.grassPatchPos.y - mg2.treeTex.height + offsetY, WHITE);
             } else {
                 DrawRectangle(mg2.grassPatchPos.x - 20 + offsetX, mg2.grassPatchPos.y - 200 + offsetY, 40, 200, MAROON);
                 DrawCircle(mg2.grassPatchPos.x + offsetX, mg2.grassPatchPos.y - 200 + offsetY, 80, GREEN);
             }
+        } else if (mg2.isSaplingPlanted) {
+            // 种下的树苗（较小）
+            if (mg2.itemSaplingTex.id > 0) {
+                DrawTexture(mg2.itemSaplingTex, mg2.grassPatchPos.x - mg2.itemSaplingTex.width/2 + offsetX, mg2.grassPatchPos.y - mg2.itemSaplingTex.height/2 + offsetY, WHITE);
+            } else {
+                DrawRectangle(mg2.grassPatchPos.x - 5 + offsetX, mg2.grassPatchPos.y - 20 + offsetY, 10, 20, DARKGREEN);
+                DrawCircle(mg2.grassPatchPos.x + offsetX, mg2.grassPatchPos.y - 25 + offsetY, 15, LIME);
+            }
         }
     }
 
+    // 玩家
     if (mg2.playerTex.id > 0) {
         float frameWidth = (float)mg2.playerTex.width / 4;
         float frameHeight = (float)mg2.playerTex.height / 4;
@@ -344,6 +391,7 @@ void DrawMinigame2(void) {
         DrawRectangle(mg2.playerPos.x - 20 + offsetX, mg2.playerPos.y - 40 + offsetY, 40, 80, BLUE);
     }
 
+    // QTE 界面
     if (mg2.state == MG2_QTE) {
         DrawRectangle(0, 0, sw, sh, (Color){0,0,0, 150});
         DrawCircle(sw/2, sh/2, 150 + GetRandomValue(-10, 10), BLACK);
@@ -355,20 +403,20 @@ void DrawMinigame2(void) {
         DrawText(TextFormat("%.1f", mg2.qteTimer), sw/2 - 30, sh/2, 50, WHITE);
     }
 
+    // 通知横幅
     if (mg2.notificationTimer > 0) {
         int tw = MeasureText(mg2.notificationText, 24);
         DrawRectangle(sw/2 - tw/2 - 20, 20, tw + 40, 50, (Color){0,0,0,200});
         DrawText(mg2.notificationText, sw/2 - tw/2, 33, 24, YELLOW);
     }
 
-    // --- 新增：绘制底部工具栏 (与 minigame.c 样式保持一致) ---
+    // 底部工具栏
     int slotSize = 80;
     int startX = 100;
     int slotY = sh - 120;
     for (int slot = 0; slot < MG2_MAX_INVENTORY; slot++) {
         Rectangle slotRect = { startX + slot * (slotSize + 10), slotY, slotSize, slotSize };
 
-        // 绘制格子底图
         if (mg2.inventorySlotTex.id > 0) {
             DrawTexturePro(mg2.inventorySlotTex,
                 (Rectangle){ 0, 0, (float)mg2.inventorySlotTex.width, (float)mg2.inventorySlotTex.height },
@@ -379,16 +427,14 @@ void DrawMinigame2(void) {
             DrawRectangleLinesEx(slotRect, 2, DARKGRAY);
         }
 
-        // 如果格子里有物品，绘制物品贴图
         if (mg2.inventory[slot] != -1) {
             int itemId = mg2.inventory[slot];
             Texture2D tex = {0};
             Color fallbackColor = BLANK;
 
-            // 根据ID获取贴图和备用颜色
             if (itemId == ITEM_BUCKET_EMPTY) { tex = mg2.itemBucketEmptyTex; fallbackColor = GRAY; }
             else if (itemId == ITEM_BUCKET_WATER) { tex = mg2.itemBucketWaterTex; fallbackColor = BLUE; }
-            else if (itemId == ITEM_GRASS) { tex = mg2.itemGrassTex; fallbackColor = GREEN; }
+            else if (itemId == ITEM_SAPLING) { tex = mg2.itemSaplingTex; fallbackColor = LIME; }
 
             if (tex.id > 0) {
                 float scale = fminf((slotSize - 10) / (float)tex.width, (slotSize - 10) / (float)tex.height);
@@ -398,19 +444,16 @@ void DrawMinigame2(void) {
                 int drawY = slotRect.y + (slotSize - drawH) / 2;
                 DrawTextureEx(tex, (Vector2){ drawX, drawY }, 0.0f, scale, WHITE);
             } else {
-                // 如果图片未加载，画个色块代替
                 DrawRectangle(slotRect.x + 20, slotRect.y + 20, 40, 40, fallbackColor);
             }
         }
 
-        // 绘制高亮选中框
         if (slot == mg2.selectedSlot) {
             DrawRectangleLinesEx(slotRect, 4, YELLOW);
         }
     }
-    // --------------------------------------------------------
 
-    // 对话框绘制逻辑
+    // 对话框
     if (mg2.showDialogue) {
         int boxY = sh - 200;
         DialogueLine *currentLine = &mg2.dialogueQueue[mg2.currentDialogueIndex];
@@ -433,18 +476,16 @@ void UnloadMinigame2(void) {
     if (mg2.treeTex.id > 0) UnloadTexture(mg2.treeTex);
     if (mg2.holeTex.id > 0) UnloadTexture(mg2.holeTex);
     
-    // 卸载新加的UI贴图
     if (mg2.inventorySlotTex.id > 0) UnloadTexture(mg2.inventorySlotTex);
     if (mg2.itemBucketEmptyTex.id > 0) UnloadTexture(mg2.itemBucketEmptyTex);
     if (mg2.itemBucketWaterTex.id > 0) UnloadTexture(mg2.itemBucketWaterTex);
-    if (mg2.itemGrassTex.id > 0) UnloadTexture(mg2.itemGrassTex);
+    if (mg2.itemSaplingTex.id > 0) UnloadTexture(mg2.itemSaplingTex);
 
     memset(&mg2, 0, sizeof(mg2));
 }
 
 // --- 辅助函数实现 ---
 
-// 添加物品到工具栏空槽位
 static void AddToInventory(int itemId) {
     for (int i = 0; i < MG2_MAX_INVENTORY; i++) {
         if (mg2.inventory[i] == -1) {

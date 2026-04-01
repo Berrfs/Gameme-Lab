@@ -1,6 +1,6 @@
 /* game.h — Public interface for the game module.
    Defines the GameState enum, GameContext struct, and core lifecycle functions.
-   Code updated by 周沐格, at 10:00PM 2026/03/24 */
+   Code updated by 周沐格, at 10:30AM 2026/04/01 */
 
 #ifndef GAME_H
 #define GAME_H
@@ -23,6 +23,8 @@ typedef enum GameState {
     STATE_SETTINGS,     /* Settings / options menu */
     STATE_MINIGAME,      /* Minigame 1 mode */
     STATE_MINIGAME2      /* Minigame 2 mode */
+    STATE_WAREHOUSE,   /* 【新增】仓库场景 */
+    STATE_MINIGAME3   /* 【新增】飞机大战小游戏 */
 } GameState;
 
 /* Master struct that holds the entire runtime state of the game */
