@@ -517,6 +517,18 @@ static void ExitToStory(const char* sceneId) {
         game.dialogue_index = 0;
         game.state = STATE_PLAYING;    
         game.auto_timer = 0.0f;
+
+        // Clear stale background/portrait to prevent 1-frame flash of old scene
+        if (game.currentBackground.id != 0) {
+            UnloadTexture(game.currentBackground);
+            game.currentBackground = (Texture2D){0};
+        }
+        game.currentBackgroundPath[0] = '\0';
+        if (game.currentPortrait.id != 0) {
+            UnloadTexture(game.currentPortrait);
+            game.currentPortrait = (Texture2D){0};
+        }
+        game.currentSpeaker[0] = '\0';
     } else {
         TraceLog(LOG_ERROR, "Minigame: Scene %s NOT FOUND! Returning to title.", targetScene);
         game.state = STATE_TITLE;
@@ -676,7 +688,7 @@ static void UpdateZoomTypewriter(void) {
         strcpy(inputLower, mg.typewriterInput);
         for (int i = 0; inputLower[i]; i++) inputLower[i] = tolower(inputLower[i]);
 
-        const char* requiredWords[] = { "time", "walk", "bride" };
+        const char* requiredWords[] = { "time", "walk", "bridge" };
 
         if (mg.typewriterStep < 3) {
             if (strcmp(inputLower, requiredWords[mg.typewriterStep]) == 0) {
@@ -727,9 +739,6 @@ static void DrawZoomTypewriter(void) {
     DrawRectangleRec(textBox, DARKGRAY);
     DrawRectangleLinesEx(textBox, 2, LIGHTGRAY);
     DrawText(mg.typewriterInput, (int)textBox.x + 10, (int)textBox.y + 10, 24, LIME);
-
-    // Prompt text drawn above the collected images
-    DrawText("Type the words in order: time, walk, bride", sw/2 - 230, drawY + 490, 24, LIGHTGRAY);
 
     // Draw the collected word images (time, walk, bride) neat and centered
     float imgScale = 0.35f;
