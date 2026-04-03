@@ -1,6 +1,6 @@
 /* game.h — Public interface for the game module.
    Defines the GameState enum, GameContext struct, and core lifecycle functions.
-   Code updated by 周沐格, at 10:30AM 2026/04/01 */
+   Code updated by 周沐格, at 07:34PM 2026/04/03 */
 
 #ifndef GAME_H
 #define GAME_H
@@ -10,7 +10,7 @@
 #include "minigame.h"  
 #include <string.h>  /* For string operations (strcpy, strcmp, strlen) */
 
-/* Base resolution for UI scaling */
+/* Base resolution for UI scaling (UI缩放的基础分辨率) */
 #define BASE_SCREEN_WIDTH 1280
 #define BASE_SCREEN_HEIGHT 720
 
@@ -21,10 +21,12 @@ typedef enum GameState {
     STATE_PLAYING,     /* Story dialogue playback */
     STATE_CHOICE,      /* Branching choice overlay */
     STATE_SETTINGS,     /* Settings / options menu */
-    STATE_MINIGAME,      /* Minigame 1 mode */
-    STATE_MINIGAME2      /* Minigame 2 mode */
+    STATE_MINIGAME,      
+    STATE_MINIGAME2,   
     STATE_WAREHOUSE,   /* 【新增】仓库场景 */
-    STATE_MINIGAME3   /* 【新增】飞机大战小游戏 */
+    STATE_MINIGAME3,   /* 【新增】飞机大战小游戏 */
+    STATE_MINIGAME4,    /* 【新增】平台跳跃小游戏 */
+    STATE_BOSSBATTLE   /* 【新增】最终 Boss 战 */
 } GameState;
 
 /* Master struct that holds the entire runtime state of the game */
@@ -42,10 +44,10 @@ typedef struct GameContext {
     float auto_interval;    /* Seconds between auto-advance steps */
     float auto_timer;       /* Accumulator for auto-advance timing */
 
-    /* Window settings */
+    /* Window settings (窗口设置) */
     bool fullscreen;        /* true = fullscreen, false = windowed */
-    int window_width;       /* Window width in windowed mode */
-    int window_height;      /* Window height in windowed mode */
+    int window_width;       /* Window width in windowed mode (窗口模式下的宽度) */
+    int window_height;      /* Window height in windowed mode (窗口模式下的高度) */
 
     /* Title screen UI textures */
     Texture2D titleBackground;
@@ -54,19 +56,20 @@ typedef struct GameContext {
     Texture2D btnStart;
     Texture2D btnMenu;
     Texture2D btnExit;
-    Texture2D forestBackground;   /* Forest background */
-    Texture2D computerImage;      /* Computer image */
+    Texture2D btnContinue; // 【新增】
+    Texture2D forestBackground;   // 森林背景
+    Texture2D computerImage;      // 电脑图片
 
-    /* Background texture of the current scene */
+    /* 当前场景的背景纹理 */
     Texture2D currentBackground;
-    /* Portrait texture of the current speaker */
+    /* 当前说话者的立绘纹理 */
     Texture2D currentPortrait;
-    /* Record of the loaded background file path to prevent redundant loading */
+    /* 记录已加载的背景文件名，用于判断是否需要重新加载 */
     char currentBackgroundPath[256];
-    /* Record of the loaded portrait speaker name to prevent redundant loading */
+    /* 记录已加载的立绘对应的说话者，用于判断是否需要重新加载 */
     char currentSpeaker[64];
 
-    struct MinigameContext* minigame;   /* Pointer to internal minigame state */
+    struct MinigameContext* minigame;   // 指向小游戏内部状态的指针
 } GameContext;
 
 /* Global game context — single instance shared across modules */
