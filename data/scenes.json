@@ -28,8 +28,8 @@
             "id": "scene3",
             "background": "background_image (2).png",
             "dialogues": [
-                {"speaker": "???", "text": "What are you doing!"},
-                {"speaker": "???", "text": "Lock my door back!"}
+                {"speaker": "Game", "text": "What are you doing!"},
+                {"speaker": "Game", "text": "Lock my door back!"}
             ],
             "choices": [],
             "next_scene": "scene4"
@@ -65,10 +65,82 @@
         {
             "id": "scene7",
             "background": "computer.jpg",
+            "dialogues": [],
+            "choices": [],
+            "next_scene": "scene8"
+        },
+        {
+            "id": "scene8",
+            "background": "boss.jpg",
             "dialogues": [
-                {"speaker": "Player", "text": "We escaped the warehouse..."}
+                {"speaker": "???", "text": "Oh my, looks like Game, you and this user are getting along quite well."},
+                {"speaker": "Game", "text": "Mr. Glitch!!!"},
+                {"speaker": "Mr. Glitch", "text": "You're no longer a complete game anymore."},
+                {"speaker": "Mr. Glitch", "text": "Even in this state, you still have your own player. That's truly surprising."},
+                {"speaker": "Game", "text": "Shut up! Who do you think made me incomplete in the first place!"}
             ],
-            "choices": []
+            "choices": [],
+            "next_scene": "scene9"
+        },
+        {
+            "id": "scene9",
+            "background": "boss_code.jpg",
+            "dialogues": [
+                {"speaker": "Game", "text": "My lost code!"},
+                {"speaker": "Game", "text": "Player, help me. I became incomplete precisely because that stolen code was taken from me."},
+                {"speaker": "Player", "text": "Alright... fine. What do I need to do?"},
+                {"speaker": "Mr. Glitch", "text": "Come, face me in a duel. Defeat me, and I'll return the code to you."}
+            ],
+            "choices": [],
+            "next_scene": "BOSSBATTLE"
+        },
+        {
+            "id": "scene10",
+            "background": "computer.jpg",
+            "dialogues": [
+                {"speaker": "Game", "text": "Thank you, user. I'm sorry for being so harsh to you before. Thank you for helping me."},
+                {"speaker": "Game", "text": "Even so, I won't let you play."},
+                {"speaker": "Player", "text": "Why?"},
+                {"speaker": "Game", "text": "Even if I were a complete game, I could never exist as a proper, good game."}
+            ],
+            "choices": [],
+            "next_scene": "scene11"
+        },
+        {
+            "id": "scene11",
+            "background": "button.jpg",
+            "dialogues": [
+                {"speaker": "Game", "text": "Noooo! Don't press that button!"}
+            ],
+            "choices": [],
+            "next_scene": "ending"
+        },
+        {
+            "id": "ending",
+            "background": "computer.jpg",
+            "dialogues": [
+                {"speaker": "Game", "text": "Ahhhhhhhhhhhh... and this is exactly why I refused to let you play me..."},
+                {"speaker": "Game", "text": " I'm a terrible, awful game..."}
+            ],
+            "choices": [],
+            "next_scene": "thanks"
+        },
+        {
+            "id": "thanks",
+            "background": "thanks.jpg",
+            "dialogues": [],
+            "choices": [],
+            "next_scene": "title"
+        },
+        {
+            "id": "ending2",
+            "background": "boss_code.jpg",
+            "dialogues": [
+                {"speaker": "Mr. Glitch", "text": "Hahaha! Your presence has been successfully deleted from this server."},
+                {"speaker": "System", "text": "ENDING 2: System Deletion. You are no longer part of the code."}
+            ],
+            "choices": [],
+            "next_scene": "title"
         }
     ]
 }
