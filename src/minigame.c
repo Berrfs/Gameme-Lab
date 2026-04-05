@@ -688,7 +688,7 @@ static void UpdateZoomTypewriter(void) {
         strcpy(inputLower, mg.typewriterInput);
         for (int i = 0; inputLower[i]; i++) inputLower[i] = tolower(inputLower[i]);
 
-        const char* requiredWords[] = { "time", "walk", "bridge" };
+        const char* requiredWords[] = { "time", "walk", "bride" };
 
         if (mg.typewriterStep < 3) {
             if (strcmp(inputLower, requiredWords[mg.typewriterStep]) == 0) {
@@ -747,9 +747,12 @@ static void DrawZoomTypewriter(void) {
     int total_width = (3 * imgW) + (2 * gap);
     int startX = sw/2 - total_width/2;
     int imgY = sh - imgW - 10;
-    for (int i = 0; i < mg.typewriterStep; i++) {
+    for (int i = 0; i < 3; i++) {
         if (mg.wordImages[i].id > 0) {
-            DrawTextureEx(mg.wordImages[i], (Vector2){ startX + i * (imgW + gap), imgY }, 0.0f, imgScale, WHITE);
+            // Berikan efek transparan (redup) jika kata tersebut belum berhasil ditebak,
+            // dan warna terang sepenuhnya jika sudah ditebak.
+            Color tintColor = (i < mg.typewriterStep) ? WHITE : (Color){ 255, 255, 255, 100 };
+            DrawTextureEx(mg.wordImages[i], (Vector2){ startX + i * (imgW + gap), imgY }, 0.0f, imgScale, tintColor);
         }
     }
 

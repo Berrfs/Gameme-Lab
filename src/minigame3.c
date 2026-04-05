@@ -15,7 +15,7 @@ extern GameContext game;
 #define ENEMY_SPAWN_TIME_MIN 0.8f   // 敌机生成最小间隔(秒)
 #define ENEMY_SPAWN_TIME_MAX 1.5f   // 敌机生成最大间隔(秒)
 #define OBSTACLE_SPAWN_TIME 3.0f    // 障碍物(钢琴/木板)生成间隔
-#define MAX_PROGRESS 20             // 通关所需的碎片数量 (20个 = 每次拾取+5%)
+#define MAX_PROGRESS 5             // 通关所需的碎片数量 (5个 = 每次拾取+20%)
 // ==========================================
 
 #define MAX_ENEMIES 20

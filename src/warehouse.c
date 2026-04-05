@@ -289,3 +289,11 @@ void NotifyWarehouseMinigame3(bool success) {
         wh.combatCleared = true; // 赢了则标记通关，背景变蓝天
     }
 }
+
+// 接收平台跳跃结果的回调函数
+void NotifyWarehouseMinigame4(bool success) {
+    wh.state = WH_FREE_ROAM;
+    if (success) {
+        wh.mazeCleared = true;
+    }
+}

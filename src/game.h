@@ -21,8 +21,8 @@ typedef enum GameState {
     STATE_PLAYING,     /* Story dialogue playback */
     STATE_CHOICE,      /* Branching choice overlay */
     STATE_SETTINGS,     /* Settings / options menu */
-    STATE_MINIGAME,      
-    STATE_MINIGAME2,   
+    STATE_MINIGAME,      /* Minigame 1 mode */
+    STATE_MINIGAME2,     /* Minigame 2 mode */
     STATE_WAREHOUSE,   /* 【新增】仓库场景 */
     STATE_MINIGAME3,   /* 【新增】飞机大战小游戏 */
     STATE_MINIGAME4,    /* 【新增】平台跳跃小游戏 */

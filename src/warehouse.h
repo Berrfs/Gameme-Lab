@@ -9,5 +9,6 @@ void DrawWarehouse(void);
 void UnloadWarehouse(void);
 // 【新增】：用于接收 Minigame3 的结果
 void NotifyWarehouseMinigame3(bool success);
+void NotifyWarehouseMinigame4(bool success);
 
 #endif
