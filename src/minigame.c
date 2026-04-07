@@ -688,7 +688,7 @@ static void UpdateZoomTypewriter(void) {
         strcpy(inputLower, mg.typewriterInput);
         for (int i = 0; inputLower[i]; i++) inputLower[i] = tolower(inputLower[i]);
 
-        const char* requiredWords[] = { "time", "walk", "bride" };
+        const char* requiredWords[] = { "time", "walk", "bridge" };
 
         if (mg.typewriterStep < 3) {
             if (strcmp(inputLower, requiredWords[mg.typewriterStep]) == 0) {
