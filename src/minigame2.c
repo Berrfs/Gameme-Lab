@@ -383,7 +383,7 @@ void DrawMinigame2(void) {
         float frameWidth = (float)mg2.playerTex.width / 4;
         float frameHeight = (float)mg2.playerTex.height / 4;
         Rectangle sourceRec = { mg2.currentFrame * frameWidth, mg2.currentDir * frameHeight, frameWidth, frameHeight };
-        Rectangle destRec = { mg2.playerPos.x + offsetX, mg2.playerPos.y + offsetY, frameWidth * 0.5, frameHeight * 0.5 };
+        Rectangle destRec = { mg2.playerPos.x + offsetX, mg2.playerPos.y + offsetY, frameWidth * 0.2, frameHeight * 0.2 };
         destRec.x -= destRec.width / 2;
         destRec.y -= destRec.height / 2;
         DrawTexturePro(mg2.playerTex, sourceRec, destRec, (Vector2){0,0}, 0.0f, WHITE);
