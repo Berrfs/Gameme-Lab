@@ -16,15 +16,19 @@ typedef enum {
 } WHState;
 
 static struct {
-    Texture2D bgCosmic;
-    Texture2D bgSky;
+    Texture2D bgLeft;       // 左侧房间背景 (驾驶舱)
+    Texture2D bgMiddle;     // 中间房间背景 (仓库)
+    Texture2D bgRight;      // 右侧房间背景 (寻找钥匙的区域)
+    Texture2D bgSkyLeft;    // 左侧通关后的蓝天
+    Texture2D bgSkyRight;   // 右侧通关后的蓝天
+    
     Texture2D arrowLeft;
     Texture2D arrowRight;
 
-    int currentRoom; // 0 = 左(驾驶舱), 1 = 中(仓库), 2 = 右(迷宫)
+    int currentRoom; // 0 = 左, 1 = 中, 2 = 右
     WHState state;
 
-    // 通关标记 (先用占位符模拟通关)
+    // 通关标记 
     bool combatCleared;
     bool mazeCleared;
 
@@ -40,10 +44,18 @@ static void DrawDialogBox(const char* speaker, const char* text);
 static void ExitWarehouseTo(const char* nextScene);
 
 void InitWarehouse(void) {
-    // 加载纹理 (如果没有这些图，稍后 Draw 里面会有颜色块兜底)
-    wh.bgCosmic = LoadTexture("UI/cosmic.jpg");
-    wh.bgSky = LoadTexture("UI/sky.jpg");
-    wh.arrowLeft = LoadTexture("UI/arrow_left.png");
+    memset(&wh, 0, sizeof(wh));
+
+    // 加载不同房间的独立背景
+    wh.bgLeft     = LoadTexture("UI/cockpit_bg.jpg"); 
+    wh.bgMiddle   = LoadTexture("UI/cosmic.png");     
+    wh.bgRight    = LoadTexture("UI/maze_bg.png");    
+    
+    // 加载两侧通关后的不同蓝天背景
+    wh.bgSkyLeft  = LoadTexture("UI/sky_left.jpg");   
+    wh.bgSkyRight = LoadTexture("UI/sky_right.jpg");  
+    
+    wh.arrowLeft  = LoadTexture("UI/arrow_left.png");
     wh.arrowRight = LoadTexture("UI/arrow_right.png");
 
     wh.currentRoom = 1; // 初始在中间房间
@@ -79,19 +91,19 @@ void UpdateWarehouse(void) {
         return;
     }
 
-    // 3. 右侧房间开场对话逻辑 -> 触发 Minigame 4
+    // 3. 右侧房间开场对话逻辑 -> 触发 Minigame 4 (双相跳跃)
     if (wh.state == WH_RIGHT_DIALOGUE) {
         if (IsMouseButtonPressed(MOUSE_LEFT_BUTTON)) {
             wh.rightIntroSeen = true;
-            // 【占位测试】：这里以后要切换到 STATE_MINIGAME4
-            // 现在我们直接模拟通关：
-            wh.mazeCleared = true;
-            wh.state = WH_FREE_ROAM;
+            // 调用 Minigame4
+            extern void InitMinigame4(void);
+            InitMinigame4();
+            game.state = STATE_MINIGAME4; // 暂停仓库，切换到小游戏
         }
         return;
     }
 
-    // 4. 左侧房间的 YES / NO 选项逻辑 -> 触发 Minigame 3
+    // 4. 左侧房间的 YES / NO 选项逻辑 -> 触发 Minigame 3 (飞机大战)
     if (wh.state == WH_LEFT_PROMPT) {
         Rectangle btnYes = { sw/2.0f - 150, sh/2.0f, 100, 50 };
         Rectangle btnNo  = { sw/2.0f + 50,  sh/2.0f, 100, 50 };
@@ -138,7 +150,7 @@ void UpdateWarehouse(void) {
             }
             // --- 左边房间的操作 (点击面板按钮) ---
             else if (wh.currentRoom == 0 && !wh.combatCleared) {
-                // 假设操作台按钮在屏幕中央偏下
+                // 操作台按钮区域
                 Rectangle dashboardBtn = { sw/2.0f - 100, sh/2.0f + 50, 200, 80 };
                 if (CheckCollisionPointRec(mouse, dashboardBtn)) {
                     wh.state = WH_LEFT_PROMPT;
@@ -152,10 +164,15 @@ void DrawWarehouse(void) {
     int sw = GetScreenWidth();
     int sh = GetScreenHeight();
 
-    // 1. 绘制背景 (根据房间和通关状态)
-    Texture2D currentBg = wh.bgCosmic;
-    if (wh.currentRoom == 0 && wh.combatCleared) currentBg = wh.bgSky;
-    if (wh.currentRoom == 2 && wh.mazeCleared) currentBg = wh.bgSky;
+    // --- 1. 绘制独立的背景逻辑 ---
+    Texture2D currentBg;
+    if (wh.currentRoom == 0) {
+        currentBg = wh.combatCleared ? wh.bgSkyLeft : wh.bgLeft;
+    } else if (wh.currentRoom == 1) {
+        currentBg = wh.bgMiddle;
+    } else { 
+        currentBg = wh.mazeCleared ? wh.bgSkyRight : wh.bgRight;
+    }
 
     if (currentBg.id > 0) {
         DrawTexturePro(currentBg, 
@@ -163,19 +180,19 @@ void DrawWarehouse(void) {
             (Rectangle){0, 0, (float)sw, (float)sh}, 
             (Vector2){0,0}, 0.0f, WHITE);
     } else {
-        // 如果没有图片资源，用颜色区分
-        ClearBackground(wh.currentRoom == 0 && wh.combatCleared ? SKYBLUE : 
-                       (wh.currentRoom == 2 && wh.mazeCleared ? SKYBLUE : DARKPURPLE));
+        // 兜底的纯色背景
+        if (wh.currentRoom == 0) {
+            ClearBackground(wh.combatCleared ? LIGHTGRAY : DARKBLUE);
+        } else if (wh.currentRoom == 1) {
+            ClearBackground(DARKPURPLE);
+        } else {
+            ClearBackground(wh.mazeCleared ? SKYBLUE : DARKGRAY);
+        }
     }
 
-    // 2. 绘制房间专属陈设
+    // --- 2. 绘制房间专属陈设 ---
     if (wh.currentRoom == 0) {
-        // 驾驶舱 UI (简单绘制几条线代表挡风玻璃)
-        DrawLineEx((Vector2){0, sh/2}, (Vector2){sw/3, sh/3}, 5, DARKGRAY);
-        DrawLineEx((Vector2){sw, sh/2}, (Vector2){sw*2/3, sh/3}, 5, DARKGRAY);
-        DrawRectangle(0, sh*2/3, sw, sh/3, GRAY); // 操作台
-        
-        // 操作台按钮
+        // 左侧操作台与按钮
         if (!wh.combatCleared) {
             Rectangle dashboardBtn = { sw/2.0f - 100, sh/2.0f + 50, 200, 80 };
             DrawRectangleRec(dashboardBtn, RED);
@@ -185,35 +202,29 @@ void DrawWarehouse(void) {
             DrawText("SYSTEM CLEARED", sw/2 - 120, sh/2 + 70, 30, GREEN);
         }
     } 
-    else if (wh.currentRoom == 1) {
-        // 仓库漂浮物 (占位)
-        DrawRectangle(sw*0.3f, sh*0.4f, 100, 20, BROWN); // 木板
-        DrawRectangle(sw*0.6f, sh*0.5f, 80, 60, BLACK); // 钢琴
-        DrawCircle(sw*0.8f, sh*0.3f, 40, DARKGREEN); // 树
-    }
 
-    // 3. 绘制左右导航箭头 (WH_FREE_ROAM 状态才显示)
+    // --- 3. 绘制左右导航箭头 (自由模式下才显示) ---
     if (wh.state == WH_FREE_ROAM) {
         Rectangle leftArrowRect = { 20, sh/2.0f - 50, 80, 100 };
         Rectangle rightArrowRect = { sw - 100, sh/2.0f - 50, 80, 100 };
 
-        if (wh.currentRoom > 0) { // 在中、右房间显示左箭头
+        if (wh.currentRoom > 0) { // 中、右房间显示左箭头
             if (wh.arrowLeft.id > 0) {
                 DrawTexturePro(wh.arrowLeft, (Rectangle){0,0,wh.arrowLeft.width,wh.arrowLeft.height}, leftArrowRect, (Vector2){0,0}, 0.0f, WHITE);
             } else {
-                DrawTriangle((Vector2){100, sh/2}, (Vector2){100, sh/2-50}, (Vector2){20, sh/2}, WHITE); // 简易左箭头
+                DrawTriangle((Vector2){100, sh/2}, (Vector2){100, sh/2-50}, (Vector2){20, sh/2}, WHITE); 
             }
         }
-        if (wh.currentRoom < 2) { // 在左、中房间显示右箭头
+        if (wh.currentRoom < 2) { // 左、中房间显示右箭头
             if (wh.arrowRight.id > 0) {
                 DrawTexturePro(wh.arrowRight, (Rectangle){0,0,wh.arrowRight.width,wh.arrowRight.height}, rightArrowRect, (Vector2){0,0}, 0.0f, WHITE);
             } else {
-                DrawTriangle((Vector2){sw-100, sh/2}, (Vector2){sw-100, sh/2-50}, (Vector2){sw-20, sh/2}, WHITE); // 简易右箭头
+                DrawTriangle((Vector2){sw-100, sh/2}, (Vector2){sw-100, sh/2-50}, (Vector2){sw-20, sh/2}, WHITE); 
             }
         }
     }
 
-    // 4. 绘制弹窗和对话框
+    // --- 4. 绘制弹窗和对话框 ---
     if (wh.state == WH_INTRO_DIALOGUE) {
         if (wh.dialogueStep == 0) DrawDialogBox("Game", "Well…Look what you've done!");
         else if (wh.dialogueStep == 1) DrawDialogBox(game.player_name, "Where is this place?");
@@ -221,7 +232,7 @@ void DrawWarehouse(void) {
         else if (wh.dialogueStep == 3) DrawDialogBox("Game", "Look, here's the wooden plank I used to lock the door in the last room...\nNo, wait, I didn't lock the door. Definitely not.");
     } 
     else if (wh.state == WH_RIGHT_DIALOGUE) {
-        DrawDialogBox("Game", "Oops, I seem to have misplaced the key to get out.\nCould you help me look for it?\n\n[Click to clear Minigame 4 test]");
+        DrawDialogBox("Game", "Oops, I seem to have misplaced the key to get out.\nCould you help me look for it?");
     }
     else if (wh.state == WH_FINAL_DIALOGUE) {
         DrawDialogBox("Game", "Oh, thank you. We were accidentally teleported here just now,\nand now we can leave.\n\n[Click to exit Warehouse]");
@@ -246,10 +257,16 @@ void DrawWarehouse(void) {
 }
 
 void UnloadWarehouse(void) {
-    if (wh.bgCosmic.id > 0) UnloadTexture(wh.bgCosmic);
-    if (wh.bgSky.id > 0) UnloadTexture(wh.bgSky);
-    if (wh.arrowLeft.id > 0) UnloadTexture(wh.arrowLeft);
+    if (wh.bgLeft.id > 0)     UnloadTexture(wh.bgLeft);
+    if (wh.bgMiddle.id > 0)   UnloadTexture(wh.bgMiddle);
+    if (wh.bgRight.id > 0)    UnloadTexture(wh.bgRight);
+    
+    if (wh.bgSkyLeft.id > 0)  UnloadTexture(wh.bgSkyLeft);
+    if (wh.bgSkyRight.id > 0) UnloadTexture(wh.bgSkyRight);
+    
+    if (wh.arrowLeft.id > 0)  UnloadTexture(wh.arrowLeft);
     if (wh.arrowRight.id > 0) UnloadTexture(wh.arrowRight);
+    
     memset(&wh, 0, sizeof(wh));
 }
 
@@ -282,18 +299,18 @@ static void ExitWarehouseTo(const char* nextScene) {
     }
 }
 
-// 接收飞机大战结果的回调函数
+// 接收minigame3结果的回调函数
 void NotifyWarehouseMinigame3(bool success) {
-    wh.state = WH_FREE_ROAM; // 无论输赢，都关掉询问面板，回到左场景自由状态
+    wh.state = WH_FREE_ROAM; 
     if (success) {
-        wh.combatCleared = true; // 赢了则标记通关，背景变蓝天
+        wh.combatCleared = true; 
     }
 }
 
-// 接收平台跳跃结果的回调函数
+// 接收minigame4结果的回调函数
 void NotifyWarehouseMinigame4(bool success) {
-    wh.state = WH_FREE_ROAM;
+    wh.state = WH_FREE_ROAM; 
     if (success) {
-        wh.mazeCleared = true;
+        wh.mazeCleared = true; 
     }
 }
