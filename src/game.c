@@ -2,12 +2,17 @@
    (核心游戏逻辑：状态机、渲染和输入处理。)
    Manages title screen, name input, story playback, choices, and settings.
    (管理标题画面、姓名输入、剧情播放、选项和设置。)
-   Code updated by 周沐格, at 10:24PM 2026/03/24 */
+   Code updated by Louis, at 09:24PM 2026/04/03 */
 
 #include "game.h"
 #include "raylib.h"
 #include "minigame.h"
 #include "minigame2.h"
+#include "warehouse.h"
+#include "minigame3.h"   
+#include "minigame4.h"   // 【新增】
+#include "bossbattle.h"
+#include "save.h"
 #include "cJSON/cJSON.h"
 #include <stdio.h>
 #include <string.h>   /* For strcpy, strcmp, strlen (用于 strcpy、strcmp、strlen) */
@@ -92,6 +97,7 @@ void InitGame(void) {
     game.btnStart = LoadTexture("UI/touch to start.png");
     game.btnMenu = LoadTexture("UI/menu.png");
     game.btnExit = LoadTexture("UI/exit.png");
+    game.btnContinue = LoadTexture("UI/continue.png"); //新增：存档功能
 
     game.forestBackground = LoadTexture("UI/forest.jpg");   
     game.computerImage    = LoadTexture("UI/computer.jpg"); 
@@ -104,6 +110,13 @@ void InitGame(void) {
 
 /* ========== Per-Frame Update Dispatch (每帧更新调度) ========== */
 void UpdateGame(void) {
+    // --- 全局存档检测：无论在什么状态下（除了标题和设置），按 V 都能保存 ---
+    if (game.state != STATE_TITLE && game.state != STATE_SETTINGS && game.state != STATE_NAME_INPUT) {
+        if (IsKeyPressed(KEY_V)) {
+            SaveGame();
+            TraceLog(LOG_INFO, "SYSTEM: Global Save Triggered at State %d", game.state);
+        }
+    }
     switch (game.state) {
         case STATE_TITLE:       HandleTitleInput(); break;
         case STATE_NAME_INPUT:  HandleNameInput(); break;
@@ -112,6 +125,10 @@ void UpdateGame(void) {
         case STATE_SETTINGS:    HandleSettingsInput(); break;
         case STATE_MINIGAME:    UpdateMinigame(); break; // Added: minigame state (新增：小游戏状态)
         case STATE_MINIGAME2:   UpdateMinigame2(); break;
+        case STATE_WAREHOUSE:   UpdateWarehouse(); break;
+        case STATE_MINIGAME3:   UpdateMinigame3(); break;
+        case STATE_MINIGAME4:   UpdateMinigame4(); break;
+        case STATE_BOSSBATTLE:  UpdateBossBattle(); break;
     }
 }
 
@@ -128,6 +145,10 @@ void DrawGame(void) {
         case STATE_SETTINGS:    DrawSettings(); break;
         case STATE_MINIGAME:    DrawMinigame(); break; // Added: minigame state (新增：小游戏状态)
         case STATE_MINIGAME2:   DrawMinigame2(); break;
+        case STATE_WAREHOUSE:   DrawWarehouse(); break;
+        case STATE_MINIGAME3:   DrawMinigame3(); break;
+        case STATE_MINIGAME4:   DrawMinigame4(); break;
+        case STATE_BOSSBATTLE:  DrawBossBattle(); break;
     }
 
     EndDrawing();
@@ -142,6 +163,7 @@ void UnloadGame(void) {
     UnloadTexture(game.btnStart);
     UnloadTexture(game.btnMenu);
     UnloadTexture(game.btnExit);
+    UnloadTexture(game.btnContinue);
 
     UnloadTexture(game.forestBackground);
     UnloadTexture(game.computerImage);
@@ -152,6 +174,11 @@ void UnloadGame(void) {
     // Ensure minigame resources are released (确保小游戏资源被释放)
     UnloadMinigame();   // Declared in minigame.h (声明在 minigame.h 中)
     UnloadMinigame2();
+    UnloadWarehouse();
+    UnloadMinigame3();
+    UnloadMinigame4();
+    extern void UnloadBossBattle(void); 
+    UnloadBossBattle();
 }
 
 /* ==================== Title Screen Drawing (标题画面绘制) ==================== */
@@ -237,6 +264,22 @@ static void DrawTitle(void) {
         DrawTextureEx(game.btnExit, (Vector2){ (float)exitX, (float)exitY }, 0.0f, exitScale, WHITE);
     }
 
+    // --- 新增：Continue 按钮 (仅当有存档时显示在 Start 上方) ---
+    if (SaveExists()) {
+        float contScale = 0.20f * uiScale;
+        int contW = (int)(game.btnContinue.width * contScale);
+        int contH = (int)(game.btnContinue.height * contScale);
+        int contX = rightAreaCenterX - contW / 2;
+        int contY = (int)(screenHeight * 0.16f); // 放置在 Start(0.40f) 的上方
+
+        if (IsButtonHovered(game.btnContinue, contX, contY, contScale)) {
+            anyHovered = true;
+            DrawTextureEx(game.btnContinue, (Vector2){(float)contX - 5, (float)contY - 2}, 0.0f, contScale * 1.05f, WHITE);
+        } else {
+            DrawTextureEx(game.btnContinue, (Vector2){(float)contX, (float)contY}, 0.0f, contScale, WHITE);
+        }
+    }
+
     /* Change mouse cursor to hand pointer when hovering any button (悬停按钮时将鼠标光标改为手型指针) */
     SetMouseCursor(anyHovered ? MOUSE_CURSOR_POINTING_HAND : MOUSE_CURSOR_DEFAULT);
 }
@@ -279,6 +322,17 @@ static void HandleTitleInput(void) {
     /* Click "Exit" → close the window (点击"退出"→ 关闭窗口) */
     if (IsButtonClicked(game.btnExit, exitX, exitY, exitScale)) {
         CloseWindow();
+    }
+    // 处理 Continue 点击
+    if (SaveExists()) {
+        float contScale = 0.20f * uiScale;
+        int contW = (int)(game.btnContinue.width * contScale);
+        int contX = rightAreaCenterX - contW / 2;
+        int contY = (int)(screenHeight * 0.16f);
+        if (IsButtonClicked(game.btnContinue, contX, contY, contScale)) {
+            LoadGame();
+            return; // 成功读档后直接返回
+        }
     }
     /* Keyboard shortcuts (键盘快捷键) */
     if (IsKeyPressed(KEY_ENTER)) {
@@ -426,10 +480,10 @@ static void DrawPlaying(void) {
         }
         DrawText(speaker, (int)(40 * uiScale), dialogBoxY + (int)(12 * uiScale), (int)(28 * uiScale), MAROON);
         DrawText(d->text, (int)(40 * uiScale), dialogBoxY + (int)(50 * uiScale), (int)(26 * uiScale), WHITE);
-    } else {
+    } /*else {
         int msgWidth = MeasureText("End of scene. Press ESC to title.", (int)(30 * uiScale));
         DrawText("End of scene. Press ESC to title.", (screenWidth - msgWidth) / 2, screenHeight / 2, (int)(30 * uiScale), BLACK);
-    }
+    }*/
 
     /* Show current mode, auto or manual (显示当前模式，自动或手动) */
     DrawText(TextFormat("Mode: %s", game.auto_mode ? "AUTO" : "MANUAL"), (int)(15 * uiScale), (int)(10 * uiScale), (int)(20 * uiScale), BLACK);
@@ -529,6 +583,16 @@ static void UpdatePlaying(void) {
                             InitMinigame2();
                             game.state = STATE_MINIGAME2;
                         }
+                        else if (strcmp(sc->next_scene_id, "WAREHOUSE") == 0) {
+                            UnloadWarehouse(); // 确保旧数据被清理
+                            InitWarehouse();
+                            game.state = STATE_WAREHOUSE;
+                        }
+                        else if (strcmp(sc->next_scene_id, "BOSSBATTLE") == 0) {
+                            extern void InitBossBattle(void);
+                            InitBossBattle();
+                            game.state = STATE_BOSSBATTLE;
+                        }
                         // 正常情况：跳往下一个场景
                         else {
                             Scene *next = GetSceneByID(sc->next_scene_id);
@@ -570,6 +634,16 @@ static void UpdatePlaying(void) {
                             InitMinigame2();
                             game.state = STATE_MINIGAME2;
                         }
+                        else if (strcmp(sc->next_scene_id, "WAREHOUSE") == 0) {
+                            UnloadWarehouse(); // 确保旧数据被清理
+                            InitWarehouse();
+                            game.state = STATE_WAREHOUSE;
+                        }
+                        else if (strcmp(sc->next_scene_id, "BOSSBATTLE") == 0) {
+                            extern void InitBossBattle(void);
+                            InitBossBattle();
+                            game.state = STATE_BOSSBATTLE;
+                        }
                         // 正常情况：跳往下一个场景
                         else {
                             Scene *next = GetSceneByID(sc->next_scene_id);
@@ -593,6 +667,11 @@ static void UpdatePlaying(void) {
     // Global shortcuts (全局快捷键)
     if (IsKeyPressed(KEY_ESCAPE)) game.state = STATE_TITLE;
     if (IsKeyPressed(KEY_S)) game.state = STATE_SETTINGS;
+    //新增：按V存档
+    if (IsKeyPressed(KEY_V)) {
+        SaveGame();
+        TraceLog(LOG_INFO, "Game Saved!");
+    }
 }
 
 
