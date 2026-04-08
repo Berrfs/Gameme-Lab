@@ -1,3 +1,10 @@
+/* minigame2.c — Minigame 2 implementation: open-world exploration.
+   Player walks around a map with WASD, interacts with a rabbit (drops sapling),
+   tills soil, plants sapling, fetches water from river, and grows a tree.
+   Growing the tree angers "Game" and triggers a QTE black-hole escape sequence.
+   Leads to either scene5 (success) or ending1 (failure).
+   Code updated by 周沐格, at 09:24PM 2026/04/03 */
+
 #include "minigame2.h"
 #include "game.h"
 #include "scene.h"

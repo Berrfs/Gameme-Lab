@@ -1,3 +1,10 @@
+/* bossbattle.c — Final boss battle implementation.
+   Multi-phase fight: player dodges bullet-hell patterns while fake UI "ATTACK" buttons
+   get destroyed by boss fire; collecting scattered code fragments lets "Game" recompile
+   a working attack module so the player can counter-attack Mr. Glitch.
+   Phases: INTRO → SURVIVAL → REPAIRING → COUNTER → DEFEATED.
+   Code updated by 周沐格, at 09:24PM 2026/04/03 */
+
 #include "bossbattle.h"
 #include "game.h"
 #include "scene.h"

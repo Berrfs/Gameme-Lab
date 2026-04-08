@@ -1,3 +1,11 @@
+/* minigame3.c — Minigame 3 implementation: vertical shooter (bullet-hell).
+   Top-down shooter where the player collects data fragments from destroyed enemies.
+   Features two meta-game interference events at 50% and 80% progress:
+     - 50%: controls reverse for 5 seconds
+     - 80%: black-hole gravity pulls the player upward
+   Clearing the minigame unlocks a new area in the warehouse hub.
+   Code updated by 周沐格, at 09:24PM 2026/04/03 */
+
 #include "minigame3.h"
 #include "game.h"
 #include "warehouse.h"

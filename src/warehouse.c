@@ -1,3 +1,9 @@
+/* warehouse.c — Warehouse hub scene implementation.
+   Three-room navigable hub: left room (cockpit) triggers Minigame 3 (shooter),
+   right room triggers Minigame 4 (platformer), center room is the storage area.
+   Both sub-games must be cleared to unlock the exit and continue the main story.
+   Code updated by 周沐格, at 09:24PM 2026/04/03 */
+
 #include "warehouse.h"
 #include "game.h"
 #include "scene.h"

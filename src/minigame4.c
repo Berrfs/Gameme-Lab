@@ -1,3 +1,11 @@
+/* minigame4.c — Minigame 4 implementation: platformer with world-swap mechanic.
+   8 symmetrical pillars (4 red, 4 black) with split points at varying heights.
+   Pressing SPACE jumps and triggers a delayed (0.15s) background color swap:
+     - Red background: black pillars are solid, red are ghosted
+     - Black background: red pillars are solid, black are ghosted
+   Player must navigate upward to collect a key and return to the warehouse.
+   Code updated by 周沐格, at 09:24PM 2026/04/03 */
+
 #include "minigame4.h" 
 #include "game.h"
 #include "warehouse.h"

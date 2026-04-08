@@ -1,3 +1,8 @@
+/* minigame4.h — Public interface for Minigame 4 (platformer with world-swap mechanic).
+   Player jumps between red/black pillars; pressing SPACE triggers a jump and
+   a delayed world-color swap, toggling which pillars are solid vs. ghosted.
+   Code updated by 周沐格, at 09:24PM 2026/04/03 */
+
 #ifndef MINIGAME4_H
 #define MINIGAME4_H
 
